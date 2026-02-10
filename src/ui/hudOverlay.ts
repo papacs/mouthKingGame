@@ -7,15 +7,15 @@ export function mountUI(): string {
     <canvas id="game-canvas"></canvas>
 
     <section id="hud">
-      <div class="hud-title">Mouth King Game</div>
-      <div id="hud-level">LV.1</div>
+      <div class="hud-title">张嘴吃水果</div>
+      <div id="hud-level">等级 1</div>
       <div id="players"></div>
     </section>
     <section id="debug-panel" class="debug-panel hidden">
-      <div id="debug-fps">FPS: 0</div>
-      <div id="debug-active">ACTIVE: 0</div>
-      <div id="debug-threshold">THRESHOLD: 0.05</div>
-      <div id="debug-pause">PAUSE: OFF</div>
+      <div id="debug-fps">帧率: 0</div>
+      <div id="debug-active">活跃玩家: 0</div>
+      <div id="debug-threshold">张嘴阈值: 0.05</div>
+      <div id="debug-pause">暂停: 否</div>
     </section>
 
     <section id="overlay-loading" class="overlay">AI 模型加载中...</section>
@@ -59,17 +59,17 @@ export function setScene(scene: GameState['scene']): void {
 export function renderHud(state: GameState): void {
   const level = document.getElementById('hud-level') as HTMLElement;
   const players = document.getElementById('players') as HTMLElement;
-  level.textContent = `LV.${state.level}`;
+  level.textContent = `等级 ${state.level}`;
 
   players.innerHTML = state.players
     .filter((p) => p.active)
     .map(
       (p) =>
-        `<div class="player-row">P${p.id + 1} | HP ${Math.max(0, Math.floor(p.hp))} | SCORE ${Math.floor(
+        `<div class="player-row">玩家${p.id + 1} | 体力 ${Math.max(0, Math.floor(p.hp))} | 分数 ${Math.floor(
           p.score
-        )} | COMBO ${p.combo} | SHD ${Math.floor(p.shieldFrames / 60)}s | FVR ${Math.floor(
+        )} | 连击 ${p.combo} | 护盾 ${Math.floor(p.shieldFrames / 60)}秒 | 狂热 ${Math.floor(
           p.feverFrames / 60
-        )}s</div>`
+        )}秒</div>`
     )
     .join('');
 
@@ -78,7 +78,7 @@ export function renderHud(state: GameState): void {
     board.innerHTML = state.players
       .filter((p) => p.enrolled)
       .sort((a, b) => b.score - a.score)
-      .map((p) => `<div>P${p.id + 1}: ${Math.floor(p.score)}</div>`)
+      .map((p) => `<div>玩家${p.id + 1}: ${Math.floor(p.score)} 分</div>`)
       .join('');
   }
 }
@@ -103,8 +103,8 @@ export function renderDebugInfo(input: {
   const active = document.getElementById('debug-active') as HTMLElement;
   const threshold = document.getElementById('debug-threshold') as HTMLElement;
   const pause = document.getElementById('debug-pause') as HTMLElement;
-  fps.textContent = `FPS: ${input.fps.toFixed(1)}`;
-  active.textContent = `ACTIVE: ${input.activePlayers}`;
-  threshold.textContent = `THRESHOLD: ${input.threshold.toFixed(3)}`;
-  pause.textContent = `PAUSE: ${input.paused ? 'ON' : 'OFF'}`;
+  fps.textContent = `帧率: ${input.fps.toFixed(1)}`;
+  active.textContent = `活跃玩家: ${input.activePlayers}`;
+  threshold.textContent = `张嘴阈值: ${input.threshold.toFixed(3)}`;
+  pause.textContent = `暂停: ${input.paused ? '是' : '否'}`;
 }
