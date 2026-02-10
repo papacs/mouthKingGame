@@ -1,4 +1,4 @@
-import type { GameState } from './types';
+import type { GameState } from '../core/types';
 
 export function mountUI(): string {
   return `

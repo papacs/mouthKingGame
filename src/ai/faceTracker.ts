@@ -1,5 +1,5 @@
 import { FaceLandmarker, FilesetResolver } from '@mediapipe/tasks-vision';
-import { MAX_PLAYERS } from './config';
+import { MAX_PLAYERS } from '../config/gameConfig';
 
 export interface DetectedMouth {
   x: number;

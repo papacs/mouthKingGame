@@ -16,6 +16,15 @@
 - 语言：TypeScript
 - AI：`@mediapipe/tasks-vision`
 - 当前多人上限：4 人
+- 质量门禁：`pnpm lint`、`pnpm typecheck`、`pnpm test`
+
+## 目录约定
+
+- `src/ai/*`: 视觉识别与追踪
+- `src/core/*`: 全局状态与核心类型
+- `src/gameplay/*`: 刷新/碰撞/结算规则
+- `src/ui/*`: HUD、Overlay 与渲染
+- `src/config/*`: 玩法参数与平衡表
 
 ## 协作规则
 

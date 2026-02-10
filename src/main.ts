@@ -1,10 +1,10 @@
 import './style.css';
-import { createFaceTracker } from './ai';
-import { MAX_PLAYERS, TUNING } from './config';
-import { updateGameplay } from './gameplay';
-import { renderGame } from './render';
-import { createInitialState, resetPlayingState } from './state';
-import { mountUI, renderDebugInfo, renderHud, setDebugPanelVisible, setPausedOverlay, setScene } from './ui';
+import { createFaceTracker } from './ai/faceTracker';
+import { MAX_PLAYERS, TUNING } from './config/gameConfig';
+import { updateGameplay } from './gameplay/gameplaySystem';
+import { createInitialState, resetPlayingState } from './core/state';
+import { mountUI, renderDebugInfo, renderHud, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
+import { renderGame } from './ui/render';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app');
@@ -155,7 +155,8 @@ async function boot(): Promise<void> {
   await video.play();
   resizeCanvas();
 
-  tracker = await createFaceTracker('/face_landmarker.task');
+  const modelPath = `${import.meta.env.BASE_URL}face_landmarker.task`;
+  tracker = await createFaceTracker(modelPath);
 
   state.scene = 'intro';
   setScene('intro');

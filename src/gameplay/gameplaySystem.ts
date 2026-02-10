@@ -1,5 +1,5 @@
-import { BALANCE_BY_PLAYERS, ITEMS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING } from './config';
-import type { FallingItem, GameState, ItemConfig, PlayerState } from './types';
+import { BALANCE_BY_PLAYERS, ITEMS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING } from '../config/gameConfig';
+import type { FallingItem, GameState, ItemConfig, PlayerState } from '../core/types';
 
 function weightedPick(pool: ItemConfig[]): ItemConfig {
   const total = pool.reduce((acc, item) => acc + item.weight, 0);

@@ -1,4 +1,4 @@
-import type { ItemConfig } from './types';
+import type { ItemConfig } from '../core/types';
 
 export const MAX_PLAYERS = 4;
 export const MAX_HP = 100;

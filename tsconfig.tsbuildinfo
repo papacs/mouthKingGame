@@ -1,1 +1,1 @@
-{"root":["./src/ai.ts","./src/config.ts","./src/gameplay.ts","./src/main.ts","./src/render.ts","./src/state.ts","./src/types.ts","./src/ui.ts"],"version":"5.9.3"}
+{"root":["./src/main.ts","./src/ai/facetracker.ts","./src/config/gameconfig.ts","./src/core/state.ts","./src/core/types.ts","./src/gameplay/gameplaysystem.ts","./src/ui/hudoverlay.ts","./src/ui/render.ts","./test/config.test.ts","./test/state.test.ts","./vite.config.ts","./vitest.config.ts"],"version":"5.9.3"}

@@ -1,4 +1,4 @@
-import { MAX_HP, MAX_PLAYERS } from './config';
+import { MAX_HP, MAX_PLAYERS } from '../config/gameConfig';
 import type { GameState, PlayerState } from './types';
 
 function createPlayer(id: number): PlayerState {

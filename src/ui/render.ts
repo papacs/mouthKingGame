@@ -1,4 +1,4 @@
-import type { GameState } from './types';
+import type { GameState } from '../core/types';
 
 const PLAYER_COLORS = ['#2ecc71', '#3498db', '#f39c12', '#e74c3c'];
 
