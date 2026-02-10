@@ -12,8 +12,9 @@ app.innerHTML = mountUI();
 
 const video = document.getElementById('video-input') as HTMLVideoElement;
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-const ctx = canvas.getContext('2d');
-if (!ctx) throw new Error('Canvas context not available');
+const ctxOrNull = canvas.getContext('2d');
+if (!ctxOrNull) throw new Error('Canvas context not available');
+const ctx: CanvasRenderingContext2D = ctxOrNull;
 
 const state = createInitialState();
 let tracker: Awaited<ReturnType<typeof createFaceTracker>> | null = null;

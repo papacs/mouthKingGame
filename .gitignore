@@ -1,0 +1,89 @@
+######################################################################
+# 1. ȫ��ͨ�� / IDE / ϵͳ�ļ� (�ϲ���ǰ���)
+######################################################################
+.DS_Store
+.history
+*.log
+*.log.gz
+**/*.log
+
+# IDE & Editor
+.idea
+.vscode
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.local
+*.iws
+*.iml
+*.ipr
+.classpath
+.project
+.settings
+.factorypath
+.springBeans
+.apt_generated
+
+######################################################################
+# 2. ǰ����ع��� (��Ӧ plus-ui) [�ο� source: 1]
+######################################################################
+node_modules/
+dist/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+selenium-debug.log
+
+# ���Ա���
+tests/**/coverage/
+tests/e2e/reports
+
+# �������ļ� (�������ṩ���ļ�������ѡ���˺��ԣ���ͨ�����鱣�� package-lock.json)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# �������ɵ� TypeScript �����ļ�
+auto-imports.d.ts
+components.d.ts
+
+######################################################################
+# 3. �����ع��� (��Ӧ RuoYi-Vue-Plus) [�ο� source: 2]
+######################################################################
+# Build Tools
+.gradle
+/build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+
+# JRebel & NetBeans
+rebel.xml
+nbproject/private/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ������ʱ�ļ�
+*.xml.versionsBackup
+*.swp
+.flattened-pom.xml
+
+# �ų����� (ȷ��Դ�벻������)
+!*/build/*.java
+!*/build/*.html
+!*/build/*.xml
+
+######################################################################
+# 4. �������� (��������)
+######################################################################
+# ��ͼ��ʾ���Ŀ¼��Ҳ�� .env��ͨ������������Ϣ���������
+.env
+.env.local
+
+logs/
+
+android/
