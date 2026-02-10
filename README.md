@@ -58,3 +58,9 @@ src/
 
 - `Space` 或 `P`: 暂停/继续
 - `F3`: 显示或隐藏调试面板
+
+
+
+ 1. 运行 pnpm lint
+  2. 运行 pnpm typecheck
+  3. 运行 pnpm test

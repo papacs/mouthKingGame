@@ -1,3 +1,5 @@
+import type { SfxKey } from '../config/soundConfig';
+
 export type ItemType = 'healthy' | 'junk' | 'trap' | 'buff';
 
 export interface ItemConfig {
@@ -7,6 +9,7 @@ export interface ItemConfig {
   score: number;
   type: ItemType;
   weight: number;
+  sfxKey: SfxKey;
 }
 
 export interface FallingItem extends ItemConfig {
@@ -21,6 +24,13 @@ export interface FloatText {
   y: number;
   color: string;
   life: number;
+  size?: number;
+}
+
+export interface SfxEvent {
+  key: SfxKey;
+  volume?: number;
+  rate?: number;
 }
 
 export interface PlayerState {
@@ -30,13 +40,24 @@ export interface PlayerState {
   mouthOpen: boolean;
   lostFrames: number;
   enrolled: boolean;
+  eliminated: boolean;
+  loserMark: string | null;
   score: number;
   hp: number;
   sugar: number;
   balance: number;
   combo: number;
+  maxCombo: number;
   shieldFrames: number;
   feverFrames: number;
+  magnetFrames: number;
+  reflectFrames: number;
+  scoreBoostFrames: number;
+  dizzyFrames: number;
+  maskFrames: number;
+  sunglassesFrames: number;
+  healthyStreak: number;
+  survivalFrames: number;
   active: boolean;
 }
 
@@ -48,4 +69,16 @@ export interface GameState {
   items: FallingItem[];
   floatTexts: FloatText[];
   players: PlayerState[];
+  sfxQueue: SfxEvent[];
+  kissCooldowns: number[][];
+  shakeFrames: number;
+  stormFrames: number;
+  endgameFrames: number;
+  slowFrames: number;
+  audienceCooldownFrames: number;
+  poopStormFrames: number;
+  trapFlashFrames: number;
+  poopSplats: { x: number; y: number; r: number; alpha: number }[];
+  surpriseFrames: number;
+  surpriseType: 'golden_rush' | 'double_drop' | 'trap_scare' | 'freeze' | null;
 }

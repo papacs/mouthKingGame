@@ -1,3 +1,4 @@
+import { TUNING } from '../config/gameConfig';
 import type { GameState } from '../core/types';
 
 export function mountUI(): string {
@@ -7,9 +8,14 @@ export function mountUI(): string {
     <canvas id="game-canvas"></canvas>
 
     <section id="hud">
-      <div class="hud-title">张嘴吃水果</div>
+      <div class="hud-title">嘴强王者</div>
       <div id="hud-level">等级 1</div>
+      <div id="hud-event" class="hud-event"></div>
+      <div id="hud-countdown" class="hud-countdown"></div>
       <div id="players"></div>
+      <div class="hud-actions">
+        <button id="btn-reset-all">整体重开</button>
+      </div>
     </section>
     <section id="debug-panel" class="debug-panel hidden">
       <div id="debug-fps">帧率: 0</div>
@@ -30,7 +36,10 @@ export function mountUI(): string {
       <div>
         <h2>游戏结束</h2>
         <div id="final-board"></div>
-        <button id="btn-restart">再来一局</button>
+        <div class="overlay-actions">
+          <button id="btn-restart">再来一局</button>
+          <button id="btn-reset-all-over">整体重开</button>
+        </div>
       </div>
     </section>
     <section id="overlay-paused" class="overlay hidden">
@@ -59,26 +68,67 @@ export function setScene(scene: GameState['scene']): void {
 export function renderHud(state: GameState): void {
   const level = document.getElementById('hud-level') as HTMLElement;
   const players = document.getElementById('players') as HTMLElement;
+  const event = document.getElementById('hud-event') as HTMLElement;
+  const countdown = document.getElementById('hud-countdown') as HTMLElement;
   level.textContent = `等级 ${state.level}`;
 
+  let eventText = '';
+  if (state.endgameFrames > 0) {
+    eventText = `疯狂模式 ${Math.ceil(state.endgameFrames / 60)}s`;
+  } else if (state.stormFrames > 0) {
+    eventText = `风暴期 ${Math.ceil(state.stormFrames / 60)}s`;
+  } else if (state.slowFrames > 0) {
+    eventText = `减速 ${Math.ceil(state.slowFrames / 60)}s`;
+  }
+  event.textContent = eventText;
+  const remaining = TUNING.matchDurationFrames - state.frame;
+  const countdownText = remaining > 0 && remaining <= 300 ? `倒计时 ${Math.ceil(remaining / 60)}s` : '';
+  countdown.textContent = countdownText;
+
   players.innerHTML = state.players
-    .filter((p) => p.active)
-    .map(
-      (p) =>
-        `<div class="player-row">玩家${p.id + 1} | 体力 ${Math.max(0, Math.floor(p.hp))} | 分数 ${Math.floor(
-          p.score
-        )} | 连击 ${p.combo} | 护盾 ${Math.floor(p.shieldFrames / 60)}秒 | 狂热 ${Math.floor(
-          p.feverFrames / 60
-        )}秒</div>`
-    )
+    .filter((p) => p.enrolled)
+    .map((p) => {
+      if (!p.active && !p.eliminated) {
+        return `<div class="player-row dim">玩家${p.id + 1} 重新识别中...</div>`;
+      }
+      const hp = Math.max(0, Math.floor(p.hp));
+      const score = Math.floor(p.score);
+      const statusIcons = [
+        p.shieldFrames > 0 ? `🛡️${Math.floor(p.shieldFrames / 60)}s` : '',
+        p.feverFrames > 0 ? `🔥${Math.floor(p.feverFrames / 60)}s` : '',
+        p.scoreBoostFrames > 0 ? `✨${Math.floor(p.scoreBoostFrames / 60)}s` : '',
+        p.reflectFrames > 0 ? `🔁${Math.floor(p.reflectFrames / 60)}s` : '',
+        p.magnetFrames > 0 ? `🧲${Math.floor(p.magnetFrames / 60)}s` : '',
+        p.dizzyFrames > 0 ? `💫${Math.floor(p.dizzyFrames / 60)}s` : '',
+        p.maskFrames > 0 ? `😷${Math.floor(p.maskFrames / 60)}s` : '',
+        p.sunglassesFrames > 0 ? `😎${Math.floor(p.sunglassesFrames / 60)}s` : ''
+      ]
+        .filter(Boolean)
+        .join(' ');
+      return `<div class="player-row${p.eliminated ? ' dim' : ''}">P${p.id + 1}${
+        p.eliminated ? ` ${p.loserMark ?? '😷'}淘汰` : ''
+      } | ❤️${hp} | ⭐${score} | ⚡${p.combo}${statusIcons ? ` | ${statusIcons}` : ''}</div>`;
+    })
     .join('');
 
   if (state.scene === 'gameover') {
     const board = document.getElementById('final-board') as HTMLElement;
+    const maxCombo = Math.max(0, ...state.players.map((p) => p.maxCombo));
+    const maxSurvival = Math.max(0, ...state.players.map((p) => p.survivalFrames));
     board.innerHTML = state.players
       .filter((p) => p.enrolled)
       .sort((a, b) => b.score - a.score)
-      .map((p) => `<div>玩家${p.id + 1}: ${Math.floor(p.score)} 分</div>`)
+      .map((p) => {
+        const tags = [
+          p.maxCombo === maxCombo ? '最佳连击' : '',
+          p.survivalFrames === maxSurvival ? '最佳生存' : ''
+        ]
+          .filter(Boolean)
+          .join(' ');
+        return `<div>玩家${p.id + 1}${p.eliminated ? ` ${p.loserMark ?? '😷'}淘汰` : ''}: ${Math.floor(
+          p.score
+        )} 分${tags ? ` (${tags})` : ''}</div>`;
+      })
       .join('');
   }
 }
