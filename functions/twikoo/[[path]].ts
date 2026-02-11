@@ -1,23 +1,33 @@
 type TwikooProxyContext = {
   request: Request;
   params: { path?: string | string[] };
+  env?: { TWIKOO_ENV_ID?: string };
 };
 
 export const onRequest = async (context: TwikooProxyContext): Promise<Response> => {
   const url = new URL(context.request.url);
   const tail = context.params.path;
   const suffix = Array.isArray(tail) ? tail.join('/') : tail ?? '';
-  const targetUrl = `https://cwd.liucfamily.cn/${suffix}${url.search}`;
+  const targetQuery = new URLSearchParams(url.search);
+  const incomingEnv = targetQuery.get('env');
+  const boundEnvId = context.env?.TWIKOO_ENV_ID?.trim();
+  if (incomingEnv === '/twikoo' && boundEnvId) {
+    targetQuery.set('env', boundEnvId);
+  }
+  const queryText = targetQuery.toString();
+  const targetUrl = `https://cwd.liucfamily.cn/${suffix}${queryText ? `?${queryText}` : ''}`;
 
   const headers = new Headers(context.request.headers);
   headers.delete('host');
   headers.set('x-forwarded-host', url.host);
   headers.set('x-forwarded-proto', url.protocol.replace(':', ''));
 
+  const method = context.request.method.toUpperCase();
+  const shouldHaveBody = !['GET', 'HEAD'].includes(method);
   const upstream = await fetch(targetUrl, {
-    method: context.request.method,
+    method,
     headers,
-    body: context.request.body,
+    body: shouldHaveBody ? context.request.body : undefined,
     redirect: 'follow'
   });
 
