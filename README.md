@@ -106,7 +106,7 @@ VITE_EVENT_THEME=spring_festival_horse pnpm dev
    - 摄像头授权成功/失败提示正确
    - 1-4 人识别与独立状态正常
    - Game Over 与重开正常
-   - 首页评论可展示且可提交
+   - 首页评论可展示且可提交  
 
 ## 许可证
 
