@@ -5,11 +5,13 @@ import { updateGameplay } from './gameplay/gameplaySystem';
 import { createAudioSystem, drainSfxQueue } from './core/audioSystem';
 import { createInitialState, resetAllState, resetPlayingState } from './core/state';
 import { initThemeSelector, mountUI, renderDebugInfo, renderHud, renderThemeText, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
+import { initComments } from './ui/comments';
 import { renderGame } from './ui/render';
 
 const app = document.getElementById('app');
 if (!app) throw new Error('Missing #app');
 app.innerHTML = mountUI();
+void initComments();
 
 const video = document.getElementById('video-input') as HTMLVideoElement;
 const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;

@@ -4,9 +4,10 @@ import type { GameState } from '../core/types';
 
 export function mountUI(): string {
   return `
-  <main id="game-root">
-    <video id="video-input" autoplay playsinline muted></video>
-    <canvas id="game-canvas"></canvas>
+  <div id="home-root">
+    <main id="game-root">
+      <video id="video-input" autoplay playsinline muted></video>
+      <canvas id="game-canvas"></canvas>
 
     <section id="hud">
       <div id="hud-title" class="hud-title">嘴强王者</div>
@@ -46,13 +47,36 @@ export function mountUI(): string {
         </div>
       </div>
     </section>
-    <section id="overlay-paused" class="overlay hidden">
-      <div>
-        <h2>已暂停</h2>
-        <p>按 Space 或 P 继续</p>
-      </div>
+      <section id="overlay-paused" class="overlay hidden">
+        <div>
+          <h2>已暂停</h2>
+          <p>按 Space 或 P 继续</p>
+        </div>
+      </section>
+    </main>
+    <section id="home-extra" class="home-extra">
+      <section class="rules-root">
+        <details class="rules-details">
+          <summary>游戏规则与食物属性说明</summary>
+          <div class="rules-content">
+            <p>规则：张嘴吃到正向食物可加分并提升连击，被负向食物命中会扣血，血量归零即淘汰。</p>
+            <p>多人：支持 1-4 人同屏，每位玩家独立计分和状态。</p>
+            <p>食物属性：常规食物稳定加分，特殊食物可能触发护盾、加速、减速等临时效果。</p>
+          </div>
+        </details>
+      </section>
+      <section id="comments-root" class="comments-root">
+        <h2 class="comments-title">留言区</h2>
+        <div id="twikoo-comments"></div>
+      </section>
+      <p class="project-link">
+        项目地址：
+        <a href="https://github.com/papacs/mouthKingGame" target="_blank" rel="noopener noreferrer">
+          https://github.com/papacs/mouthKingGame
+        </a>
+      </p>
     </section>
-  </main>`;
+  </div>`;
 }
 
 function renderThemeCard(theme: ThemeConfig, activeId: ThemeId): string {
@@ -105,6 +129,7 @@ export function setScene(scene: GameState['scene']): void {
   const loading = document.getElementById('overlay-loading') as HTMLElement;
   const intro = document.getElementById('overlay-intro') as HTMLElement;
   const gameOver = document.getElementById('overlay-gameover') as HTMLElement;
+  const homeExtra = document.getElementById('home-extra') as HTMLElement | null;
 
   loading.classList.add('hidden');
   intro.classList.add('hidden');
@@ -113,6 +138,7 @@ export function setScene(scene: GameState['scene']): void {
   if (scene === 'loading') loading.classList.remove('hidden');
   if (scene === 'intro') intro.classList.remove('hidden');
   if (scene === 'gameover') gameOver.classList.remove('hidden');
+  homeExtra?.classList.toggle('hidden', scene !== 'intro');
 }
 
 export function renderHud(state: GameState): void {
