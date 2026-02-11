@@ -1,0 +1,20 @@
+export const ITEM_EFFECT_GUIDE: Record<string, string> = {
+  bomb: '高额伤害并触发爆炸震屏',
+  poop: '中等伤害，触发便便风暴遮挡',
+  rotten: '伤害并触发短暂眩晕',
+  bee: '伤害并触发口罩状态',
+  water: '回血并降低糖分',
+  clock: '进入短暂狂热加成',
+  shield: '开启护盾可抵挡陷阱',
+  brush: '清空糖分',
+  golden: '血量回满并额外高分',
+  slow: '全局减速，争取处理时间',
+  magnet: '磁吸道具，扩大吃取优势',
+  clear: '清除屏幕当前掉落物',
+  reflect: '短时反伤，陷阱可转收益',
+  red_packet: '额外高分，概率触发惊喜事件',
+  orange: '回血并保底连击',
+  dumpling: '回血并补充护盾时长',
+  horse_cake: '补充磁吸时长',
+  firecracker: '伤害并触发爆鸣震屏'
+};

@@ -1,331 +1,230 @@
 import './style.css';
-import { createFaceTracker } from './ai/faceTracker';
-import { MAX_PLAYERS, TUNING, setActiveTheme } from './config/gameConfig';
-import { updateGameplay } from './gameplay/gameplaySystem';
-import { createAudioSystem, drainSfxQueue } from './core/audioSystem';
-import { createInitialState, resetAllState, resetPlayingState } from './core/state';
-import { initThemeSelector, mountUI, renderDebugInfo, renderHud, renderThemeText, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
+import { getActiveTheme, getItems, setActiveTheme, type ThemeId } from './config/gameConfig';
+import { ITEM_EFFECT_GUIDE } from './config/itemGuide';
+import { listThemeOptions } from './config/themes/springFestivalHorse';
 import { initComments } from './ui/comments';
-import { renderGame } from './ui/render';
 
-const app = document.getElementById('app');
-if (!app) throw new Error('Missing #app');
-app.innerHTML = mountUI();
-void initComments();
+const appElement = document.getElementById('app') as HTMLElement | null;
+if (!appElement) throw new Error('Missing #app');
+const appRoot: HTMLElement = appElement;
 
-const video = document.getElementById('video-input') as HTMLVideoElement;
-const canvas = document.getElementById('game-canvas') as HTMLCanvasElement;
-const ctxOrNull = canvas.getContext('2d');
-if (!ctxOrNull) throw new Error('Canvas context not available');
-const ctx: CanvasRenderingContext2D = ctxOrNull;
+let cameraReady = false;
+let commentsInited = false;
 
-const state = createInitialState();
-const audio = createAudioSystem();
-let tracker: Awaited<ReturnType<typeof createFaceTracker>> | null = null;
-let lastVideoTime = -1;
-let showDebug = false;
-let fpsValue = 0;
-let fpsFrames = 0;
-let fpsLastTs = performance.now();
-let lastScene = state.scene;
-let pendingCandidates: { x: number; y: number; frames: number; age: number }[] = [];
+function typeLabel(type: string): string {
+  if (type === 'healthy') return '健康';
+  if (type === 'junk') return '高分';
+  if (type === 'trap') return '陷阱';
+  return '功能';
+}
 
-function resizeCanvas(): void {
-  if (video.videoWidth > 0 && video.videoHeight > 0) {
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+function effectLabel(id: string, type: string, score: number): string {
+  const known = ITEM_EFFECT_GUIDE[id];
+  if (known) return known;
+  if (type === 'healthy') return '稳态回血，降低风险';
+  if (type === 'junk') return '高收益，但会推高糖分';
+  if (type === 'trap') return '负面道具，优先规避';
+  return score > 0 ? '功能增益道具' : '功能型扰动道具';
+}
+
+function renderFoodTable(): string {
+  const rows = getItems()
+    .sort((a, b) => b.weight - a.weight)
+    .map((item) => {
+      return `<tr>
+        <td>${item.emoji}</td>
+        <td>${item.name}</td>
+        <td><span class="type-tag type-${item.type}">${typeLabel(item.type)}</span></td>
+        <td>${item.score > 0 ? `+${item.score}` : item.score}</td>
+        <td>${item.weight}</td>
+        <td>${effectLabel(item.id, item.type, item.score)}</td>
+      </tr>`;
+    })
+    .join('');
+
+  return `<div class="rules-content">
+    <p>规则：张嘴吃正向道具冲高分，吃到陷阱会掉血，血量归零直接淘汰。</p>
+    <p>模式：支持 1-4 人同屏，每位玩家独立计分与状态，抢节奏、拼连击、拼运营。</p>
+    <p>当前模式：<strong>${getActiveTheme().displayName}</strong>（下表按当前模式动态计算）</p>
+    <div class="table-wrap">
+      <table class="food-table">
+        <thead>
+          <tr><th>道具</th><th>名称</th><th>类别</th><th>分值</th><th>权重</th><th>功能/特效说明</th></tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  </div>`;
+}
+
+function setCameraStatus(
+  state: 'checking' | 'granted' | 'denied' | 'unsupported',
+  text: string
+): void {
+  const badge = document.getElementById('camera-status-badge') as HTMLElement | null;
+  const desc = document.getElementById('camera-status-text') as HTMLElement | null;
+  const enterButton = document.getElementById('btn-enter-game') as HTMLButtonElement | null;
+  if (badge) {
+    badge.className = `cam-badge ${state}`;
+    badge.textContent = state === 'granted' ? '已就绪' : state === 'checking' ? '📷 检测中' : '📷 未就绪';
+  }
+  if (desc) desc.textContent = text;
+  cameraReady = state === 'granted';
+  if (enterButton) {
+    enterButton.disabled = !cameraReady;
+    enterButton.title = cameraReady ? '摄像头可用，点击进入游戏' : '摄像头未就绪，无法开始';
   }
 }
 
-function syncPlayersFromDetection(): void {
-  if (!tracker || video.currentTime === lastVideoTime) return;
-  lastVideoTime = video.currentTime;
+async function checkCameraAuthorization(): Promise<void> {
+  setCameraStatus('checking', '正在检查摄像头授权状态...');
 
-  const rawDetections = tracker.detect(video);
-  const merged: typeof rawDetections = [];
-  for (const d of rawDetections) {
-    const hit = merged.find((m) => Math.hypot(m.x - d.x, m.y - d.y) <= TUNING.trackingMergeDistance);
-    if (hit) {
-      hit.x = (hit.x + d.x) * 0.5;
-      hit.y = (hit.y + d.y) * 0.5;
-      hit.openRatio = Math.max(hit.openRatio, d.openRatio);
-    } else {
-      merged.push({ ...d });
-    }
-  }
-
-  const remainingDetections = merged.map((d, index) => ({ ...d, index }));
-  const takenDetections = new Set<number>();
-  const enrolledPlayers = state.players.filter((p) => p.enrolled);
-  const maxAllowedPlayers = Math.min(MAX_PLAYERS, remainingDetections.length);
-
-  // First enrollment: assign IDs from left to right.
-  if (enrolledPlayers.length === 0 && remainingDetections.length > 0) {
-    const sorted = [...remainingDetections].sort((a, b) => a.x - b.x);
-    for (let i = 0; i < MAX_PLAYERS; i += 1) {
-      const p = state.players[i];
-      const next = sorted[i];
-      if (!next) {
-        p.active = false;
-        p.mouthOpen = false;
-        continue;
-      }
-      takenDetections.add(next.index);
-      p.active = true;
-      p.enrolled = true;
-      p.lostFrames = 0;
-      p.x = next.x;
-      p.y = next.y;
-      p.mouthOpen = next.openRatio > TUNING.mouthOpenThreshold;
-    }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    setCameraStatus('unsupported', '当前浏览器不支持摄像头访问，请使用最新 Chrome/Edge。');
     return;
   }
 
-  // Match detections to enrolled players by global nearest pairs to reduce swaps.
-  const pairs: { playerIndex: number; detectionIndex: number; dist: number }[] = [];
-  for (let i = 0; i < MAX_PLAYERS; i += 1) {
-    const p = state.players[i];
-    if (!p.enrolled) continue;
-    const maxDist = TUNING.trackingMaxDistance * (p.active ? 1 : 1.6);
-    for (const d of remainingDetections) {
-      const dist = Math.hypot(p.x - d.x, p.y - d.y);
-      if (dist <= maxDist) {
-        pairs.push({ playerIndex: i, detectionIndex: d.index, dist });
+  try {
+    if ('permissions' in navigator && navigator.permissions?.query) {
+      const result = await navigator.permissions.query({ name: 'camera' as PermissionName });
+      if (result.state === 'denied') {
+        setCameraStatus('denied', '摄像头权限已被拒绝，请在浏览器地址栏权限中改为允许。');
+        return;
       }
     }
-  }
-  pairs.sort((a, b) => a.dist - b.dist);
-
-  const assignedPlayers = new Set<number>();
-  for (const pair of pairs) {
-    if (assignedPlayers.has(pair.playerIndex)) continue;
-    if (takenDetections.has(pair.detectionIndex)) continue;
-    assignedPlayers.add(pair.playerIndex);
-    takenDetections.add(pair.detectionIndex);
-
-    const p = state.players[pair.playerIndex];
-    const match = remainingDetections.find((d) => d.index === pair.detectionIndex);
-    if (!match) continue;
-        p.x = match.x;
-        p.y = match.y;
-    p.mouthOpen = match.openRatio > TUNING.mouthOpenThreshold;
-    p.active = true;
-    p.enrolled = true;
-    p.lostFrames = 0;
+  } catch {
+    // ignore permissions api failure and fallback to actual media check
   }
 
-  // Update enrolled players that were not matched this frame.
-  for (let i = 0; i < MAX_PLAYERS; i += 1) {
-    const p = state.players[i];
-    if (!p.enrolled || assignedPlayers.has(i)) continue;
-    p.lostFrames += 1;
-    p.mouthOpen = false;
-    if (p.lostFrames > TUNING.trackingLostGraceFrames) {
-      p.active = false;
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { width: 640, height: 360, facingMode: 'user' },
+      audio: false
+    });
+    for (const track of stream.getTracks()) {
+      track.stop();
     }
-  }
-
-  const unmatchedDetections = remainingDetections.filter((d) => !takenDetections.has(d.index));
-  const updatedCandidates = new Set<number>();
-  const nextCandidates: typeof pendingCandidates = [];
-
-  for (const d of unmatchedDetections) {
-    let bestIndex = -1;
-    let bestDist = Number.POSITIVE_INFINITY;
-    for (let i = 0; i < pendingCandidates.length; i += 1) {
-      if (updatedCandidates.has(i)) continue;
-      const c = pendingCandidates[i];
-      const dist = Math.hypot(c.x - d.x, c.y - d.y);
-      if (dist < bestDist) {
-        bestDist = dist;
-        bestIndex = i;
-      }
-    }
-    if (bestIndex >= 0 && bestDist <= TUNING.trackingCandidateMergeDistance) {
-      const c = pendingCandidates[bestIndex];
-      updatedCandidates.add(bestIndex);
-      nextCandidates.push({
-        x: (c.x + d.x) * 0.5,
-        y: (c.y + d.y) * 0.5,
-        frames: c.frames + 1,
-        age: 0
-      });
-    } else {
-      nextCandidates.push({ x: d.x, y: d.y, frames: 1, age: 0 });
-    }
-  }
-
-  for (let i = 0; i < pendingCandidates.length; i += 1) {
-    if (updatedCandidates.has(i)) continue;
-    const c = pendingCandidates[i];
-    const age = c.age + 1;
-    if (age <= TUNING.trackingCandidateMaxAge) {
-      nextCandidates.push({ ...c, age });
-    }
-  }
-
-  pendingCandidates = nextCandidates;
-  const readyCandidates = pendingCandidates
-    .filter((c) => c.frames >= TUNING.trackingNewPlayerFrames)
-    .filter((c) => {
-      for (const p of state.players) {
-        if (!p.enrolled) continue;
-        const dist = Math.hypot(p.x - c.x, p.y - c.y);
-        if (dist < TUNING.trackingCandidateMinDistance) return false;
-      }
-      return true;
-    })
-    .sort((a, b) => b.frames - a.frames);
-
-  // Fill un-enrolled slots only when detections exceed enrolled count.
-  let remainingSlots = maxAllowedPlayers - enrolledPlayers.length;
-  if (remainingSlots > 0) {
-    for (let i = 0; i < MAX_PLAYERS; i += 1) {
-      if (remainingSlots <= 0) break;
-      const p = state.players[i];
-      if (p.enrolled) continue;
-      const next = readyCandidates.shift();
-      if (!next) break;
-      pendingCandidates = pendingCandidates.filter((c) => c !== next);
-      p.active = true;
-      p.enrolled = true;
-      p.lostFrames = 0;
-    p.x = next.x;
-    p.y = next.y;
-      p.mouthOpen = false;
-      remainingSlots -= 1;
-    }
-  } else if (unmatchedDetections.length > 0) {
-    const reclaimable = state.players
-      .map((p, index) => ({ p, index }))
-      .filter((entry) => entry.p.enrolled && !entry.p.active && entry.p.lostFrames > TUNING.trackingLostGraceFrames)
-      .sort((a, b) => b.p.lostFrames - a.p.lostFrames);
-
-    let reclaimIndex = 0;
-    for (const d of readyCandidates) {
-      const entry = reclaimable[reclaimIndex];
-      if (!entry) break;
-      pendingCandidates = pendingCandidates.filter((c) => c !== d);
-      reclaimIndex += 1;
-      const p = entry.p;
-      p.active = true;
-      p.enrolled = true;
-      p.lostFrames = 0;
-      p.x = d.x;
-      p.y = d.y;
-      p.mouthOpen = false;
-    }
+    setCameraStatus('granted', '摄像头授权正常，可立即进入游戏。');
+    void prefetchGameAssets();
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '未知错误';
+    setCameraStatus('denied', `摄像头检测失败：${message}`);
   }
 }
 
-function loop(): void {
-  fpsFrames += 1;
-  const now = performance.now();
-  if (now - fpsLastTs >= 500) {
-    fpsValue = (fpsFrames * 1000) / (now - fpsLastTs);
-    fpsFrames = 0;
-    fpsLastTs = now;
-  }
-
-  syncPlayersFromDetection();
-  updateGameplay(state, canvas.width, canvas.height);
-  drainSfxQueue(audio, state.sfxQueue);
-  renderGame(ctx, video, state);
-  renderHud(state);
-  renderDebugInfo({
-    fps: fpsValue,
-    activePlayers: state.players.filter((p) => p.active).length,
-    threshold: TUNING.mouthOpenThreshold,
-    paused: state.isPaused
-  });
-
-  if (lastScene !== state.scene && state.scene === 'gameover') {
-    audio.play('game_over');
-  }
-  lastScene = state.scene;
-  if (state.scene === 'gameover') setScene('gameover');
-
-  requestAnimationFrame(loop);
-}
-
-async function boot(): Promise<void> {
-  setScene('loading');
-
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 1280, height: 720, facingMode: 'user' }
-  });
-
-  video.srcObject = stream;
-  await video.play();
-  resizeCanvas();
-
+async function prefetchGameAssets(): Promise<void> {
   const modelPath = `${import.meta.env.BASE_URL}face_landmarker.task`;
-  tracker = await createFaceTracker(modelPath);
-
-  state.scene = 'intro';
-  setScene('intro');
-  renderThemeText();
-  initThemeSelector((id) => {
-    setActiveTheme(id);
-    renderThemeText();
-    renderHud(state);
-  });
-  renderHud(state);
-
-  const startButton = document.getElementById('btn-start') as HTMLButtonElement;
-  const restartButton = document.getElementById('btn-restart') as HTMLButtonElement;
-  const resetAllButton = document.getElementById('btn-reset-all') as HTMLButtonElement | null;
-  const resetAllOverButton = document.getElementById('btn-reset-all-over') as HTMLButtonElement | null;
-
-  const start = (): void => {
-    const isRestart = state.scene === 'gameover';
-    audio.unlock();
-    audio.play(isRestart ? 'ui_restart' : 'ui_start');
-    pendingCandidates = [];
-    resetPlayingState(state);
-    state.scene = 'playing';
-    setScene('playing');
-    setPausedOverlay(false);
-  };
-
-  startButton.addEventListener('click', start);
-  restartButton.addEventListener('click', start);
-  const resetAll = (): void => {
-    audio.unlock();
-    audio.play('ui_restart');
-    pendingCandidates = [];
-    resetAllState(state);
-    lastScene = state.scene;
-    setScene('intro');
-    setPausedOverlay(false);
-  };
-  resetAllButton?.addEventListener('click', resetAll);
-  resetAllOverButton?.addEventListener('click', resetAll);
-  window.addEventListener('keydown', (event: KeyboardEvent) => {
-    if (event.key === 'F3') {
-      showDebug = !showDebug;
-      setDebugPanelVisible(showDebug);
-      return;
-    }
-    if (event.code === 'Space' || event.key.toLowerCase() === 'p') {
-      if (state.scene !== 'playing') return;
-      if (event.code === 'Space') event.preventDefault();
-      state.isPaused = !state.isPaused;
-      audio.unlock();
-      audio.play(state.isPaused ? 'ui_pause_on' : 'ui_pause_off');
-      setPausedOverlay(state.isPaused);
-    }
-    if (event.key.toLowerCase() === 'r') {
-      resetAll();
-    }
-  });
-
-  loop();
+  try {
+    await fetch(modelPath, { cache: 'force-cache' });
+  } catch {
+    // silent; gameplay page still performs normal load
+  }
 }
 
-boot().catch((err: unknown) => {
-  console.error(err);
-  setScene('loading');
-  const loading = document.getElementById('overlay-loading');
-  if (loading) loading.textContent = `初始化失败: ${err instanceof Error ? err.message : '未知错误'}`;
-});
+function updateModeSummary(): void {
+  const summary = document.getElementById('mode-summary') as HTMLElement | null;
+  if (!summary) return;
+  summary.textContent = `选择模式（当前：${getActiveTheme().displayName}）`;
+}
+
+function mountHome(): void {
+  document.body.classList.remove('game-page');
+  commentsInited = false;
+
+  const activeTheme = getActiveTheme();
+  const themeCards = listThemeOptions()
+    .map((theme) => {
+      const selectedClass = theme.id === activeTheme.id ? ' selected' : '';
+      return `<button class="mode-card${selectedClass}" type="button" data-theme-id="${theme.id}">
+        <div class="mode-card-icon">${theme.previewIcon}</div>
+        <div class="mode-card-name">${theme.displayName}</div>
+        <div class="mode-card-text">${theme.previewText}</div>
+      </button>`;
+    })
+    .join('');
+
+  appRoot.innerHTML = `
+  <main id="home-root" class="home-layout">
+    <section class="home-hero">
+      <h1>嘴强王者</h1>
+      <p class="hero-lead">张嘴开吃，极速抢分，陷阱反转。1-4 人同屏对抗，30 秒就能打出一局高能名场面。</p>
+      <div class="camera-row">
+        <span id="camera-status-badge" class="cam-badge checking">检测中</span>
+        <span id="camera-status-text" class="camera-status-text">正在检查摄像头授权状态...</span>
+        <button id="btn-recheck-camera" class="ghost-btn" type="button">重新检测</button>
+      </div>
+      <details id="mode-details" class="mode-details" open>
+        <summary id="mode-summary" class="mode-summary">选择模式（当前：${activeTheme.displayName}）</summary>
+        <div id="mode-cards" class="mode-cards">${themeCards}</div>
+      </details>
+      <button id="btn-enter-game" class="enter-game-btn" disabled>进入游戏</button>
+    </section>
+
+    <section class="rules-root">
+      <details class="rules-details">
+        <summary>游戏规则与食物属性说明</summary>
+        <div id="rules-content-host">${renderFoodTable()}</div>
+      </details>
+    </section>
+
+    <section class="comments-root">
+      <details id="comments-details" class="comments-details">
+        <summary class="comments-title">留言区</summary>
+        <div id="twikoo-comments"></div>
+      </details>
+    </section>
+
+    <footer class="home-footer">
+      <p class="footer-copy">如果这个项目让你玩得开心，欢迎点个 Star，给我们一点继续打磨玩法的动力。</p>
+      <p class="project-link">
+        项目地址：
+        <a href="https://github.com/papacs/mouthKingGame" target="_blank" rel="noopener noreferrer">
+          https://github.com/papacs/mouthKingGame
+        </a>
+      </p>
+    </footer>
+  </main>`;
+
+  const rulesHost = document.getElementById('rules-content-host') as HTMLElement | null;
+  const modeCards = Array.from(document.querySelectorAll('.mode-card')) as HTMLButtonElement[];
+  for (const card of modeCards) {
+    card.addEventListener('click', () => {
+      const themeId = card.dataset.themeId as ThemeId | undefined;
+      if (!themeId) return;
+      setActiveTheme(themeId);
+      for (const target of modeCards) {
+        target.classList.toggle('selected', target === card);
+      }
+      updateModeSummary();
+      if (rulesHost) rulesHost.innerHTML = renderFoodTable();
+    });
+  }
+
+  const commentsDetails = document.getElementById('comments-details') as HTMLDetailsElement | null;
+  commentsDetails?.addEventListener('toggle', () => {
+    if (!commentsDetails.open || commentsInited) return;
+    commentsInited = true;
+    void initComments();
+  });
+
+  const recheckButton = document.getElementById('btn-recheck-camera') as HTMLButtonElement | null;
+  recheckButton?.addEventListener('click', () => {
+    void checkCameraAuthorization();
+  });
+
+  const enterButton = document.getElementById('btn-enter-game') as HTMLButtonElement | null;
+  enterButton?.addEventListener('click', () => {
+    if (!cameraReady) return;
+    void enterGame();
+  });
+
+  void checkCameraAuthorization();
+}
+
+async function enterGame(): Promise<void> {
+  document.body.classList.add('game-page');
+  appRoot.innerHTML = '<main id="game-root"><section id="overlay-loading" class="overlay">正在异步加载游戏依赖并启动...</section></main>';
+  await import('./gameApp');
+}
+
+mountHome();

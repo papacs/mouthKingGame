@@ -1,13 +1,11 @@
 import { TUNING, getActiveTheme } from '../config/gameConfig';
-import { listThemeOptions, type ThemeId, type ThemeConfig } from '../config/themes/springFestivalHorse';
 import type { GameState } from '../core/types';
 
 export function mountUI(): string {
   return `
-  <div id="home-root">
-    <main id="game-root">
-      <video id="video-input" autoplay playsinline muted></video>
-      <canvas id="game-canvas"></canvas>
+  <main id="game-root">
+    <video id="video-input" autoplay playsinline muted></video>
+    <canvas id="game-canvas"></canvas>
 
     <section id="hud">
       <div id="hud-title" class="hud-title">嘴强王者</div>
@@ -26,14 +24,13 @@ export function mountUI(): string {
       <div id="debug-threshold">张嘴阈值: 0.05</div>
       <div id="debug-pause">暂停: 否</div>
     </section>
+    <button id="btn-back-home" class="back-home-btn" type="button">返回首页</button>
 
     <section id="overlay-loading" class="overlay">AI 模型加载中...</section>
     <section id="overlay-intro" class="overlay hidden">
       <div>
         <h1 id="intro-headline"></h1>
         <p id="intro-subtitle"></p>
-        <div class="theme-card-label">选择主题</div>
-        <div id="theme-cards" class="theme-cards"></div>
         <button id="btn-start">开始</button>
       </div>
     </section>
@@ -53,64 +50,7 @@ export function mountUI(): string {
           <p>按 Space 或 P 继续</p>
         </div>
       </section>
-    </main>
-    <section id="home-extra" class="home-extra">
-      <section class="rules-root">
-        <details class="rules-details">
-          <summary>游戏规则与食物属性说明</summary>
-          <div class="rules-content">
-            <p>规则：张嘴吃到正向食物可加分并提升连击，被负向食物命中会扣血，血量归零即淘汰。</p>
-            <p>多人：支持 1-4 人同屏，每位玩家独立计分和状态。</p>
-            <p>食物属性：常规食物稳定加分，特殊食物可能触发护盾、加速、减速等临时效果。</p>
-          </div>
-        </details>
-      </section>
-      <section id="comments-root" class="comments-root">
-        <h2 class="comments-title">留言区</h2>
-        <div id="twikoo-comments"></div>
-      </section>
-      <p class="project-link">
-        项目地址：
-        <a href="https://github.com/papacs/mouthKingGame" target="_blank" rel="noopener noreferrer">
-          https://github.com/papacs/mouthKingGame
-        </a>
-      </p>
-    </section>
-  </div>`;
-}
-
-function renderThemeCard(theme: ThemeConfig, activeId: ThemeId): string {
-  const selectedClass = theme.id === activeId ? ' selected' : '';
-  return `<button class="theme-card${selectedClass}" data-theme-id="${theme.id}" type="button">
-    <div class="theme-card-icon">${theme.previewIcon}</div>
-    <div class="theme-card-name">${theme.displayName}</div>
-    <div class="theme-card-text">${theme.previewText}</div>
-  </button>`;
-}
-
-function updateThemeCardSelection(activeId: ThemeId): void {
-  const cards = Array.from(document.querySelectorAll('.theme-card')) as HTMLButtonElement[];
-  for (const card of cards) {
-    card.classList.toggle('selected', card.dataset.themeId === activeId);
-  }
-}
-
-export function initThemeSelector(onChange?: (id: ThemeId) => void): void {
-  const container = document.getElementById('theme-cards') as HTMLElement | null;
-  if (!container) return;
-  const active = getActiveTheme();
-  container.innerHTML = listThemeOptions()
-    .map((theme) => renderThemeCard(theme, active.id))
-    .join('');
-  const cards = Array.from(container.querySelectorAll('.theme-card')) as HTMLButtonElement[];
-  for (const card of cards) {
-    card.onclick = () => {
-      const value = card.dataset.themeId as ThemeId | undefined;
-      if (!value) return;
-      updateThemeCardSelection(value);
-      onChange?.(value);
-    };
-  }
+  </main>`;
 }
 
 export function renderThemeText(): void {
@@ -129,7 +69,6 @@ export function setScene(scene: GameState['scene']): void {
   const loading = document.getElementById('overlay-loading') as HTMLElement;
   const intro = document.getElementById('overlay-intro') as HTMLElement;
   const gameOver = document.getElementById('overlay-gameover') as HTMLElement;
-  const homeExtra = document.getElementById('home-extra') as HTMLElement | null;
 
   loading.classList.add('hidden');
   intro.classList.add('hidden');
@@ -138,7 +77,6 @@ export function setScene(scene: GameState['scene']): void {
   if (scene === 'loading') loading.classList.remove('hidden');
   if (scene === 'intro') intro.classList.remove('hidden');
   if (scene === 'gameover') gameOver.classList.remove('hidden');
-  homeExtra?.classList.toggle('hidden', scene !== 'intro');
 }
 
 export function renderHud(state: GameState): void {
