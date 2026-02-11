@@ -1,4 +1,5 @@
 # Mouth King Game
+# 嘴强王者
 
 基于 `TypeScript + Vite + MediaPipe` 的体感小游戏工程。
 
