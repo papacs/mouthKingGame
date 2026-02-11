@@ -231,6 +231,7 @@ function loop(): void {
   drainSfxQueue(audio, state.sfxQueue);
   renderGame(ctx, video, state);
   renderHud(state);
+  setPausedOverlay(state.scene === 'playing' && state.isPaused);
   renderDebugInfo({
     fps: fpsValue,
     activePlayers: state.players.filter((p) => p.active).length,

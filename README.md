@@ -81,16 +81,21 @@ VITE_EVENT_THEME=spring_festival_horse pnpm dev
 ## 评论系统（Twikoo）说明
 
 本项目默认前端请求同域 `/twikoo`，由 Pages Functions 转发到你的评论后端域名。
+若你不想走同域反代，可在 Pages 环境变量里设置 `VITE_TWIKOO_ENV_ID` 为完整后端地址（例如 `https://cwd.liucfamily.cn`），前端会直接请求该地址。
 
 - 代理文件：
   - `functions/twikoo/index.ts`（处理 `/twikoo`）
   - `functions/twikoo/[[path]].ts`（处理 `/twikoo/*`）
 - 当前后端目标：`https://cwd.liucfamily.cn`
 
-可选环境变量：
+可选环境变量（注意前端只读取 `VITE_` 前缀）：
 
-- `VITE_TWIKOO_ENV_ID`：前端 `envId` 覆盖值
-- `TWIKOO_ENV_ID`：反代层对 `env` 参数覆盖值（可选）
+- `VITE_TWIKOO_ENV_ID`：前端 `envId` 覆盖值（推荐填完整后端地址）
+- `TWIKOO_ENV_ID`：反代层对 `env` 参数覆盖值（仅 Functions 转发时生效）
+
+常见问题：
+
+- 提交评论请求 `https://<你的域名>/twikoo` 返回 404：说明 Pages Functions 未生效（Root directory 不在仓库根目录或 Functions 未启用），可修复 Functions 或直接配置 `VITE_TWIKOO_ENV_ID` 绕过反代。
 
 ## 移动端说明
 

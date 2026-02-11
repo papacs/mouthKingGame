@@ -42,7 +42,7 @@ tests/e2e/reports
 # �������ļ� (�������ṩ���ļ�������ѡ���˺��ԣ���ͨ�����鱣�� package-lock.json)
 package-lock.json
 yarn.lock
-pnpm-lock.yaml
+# pnpm-lock.yaml
 
 # �������ɵ� TypeScript �����ļ�
 auto-imports.d.ts
