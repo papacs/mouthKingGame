@@ -28,16 +28,30 @@ pnpm preview
 
 ## 主题开关（运营活动）
 
-默认是常驻主题。启用马年春节主题：
+默认支持在“开始页”直接选择主题（推荐，无需命令行）。
+
+命令行方式仅作可选：启用马年春节主题
 
 ```bash
 VITE_EVENT_THEME=spring_festival_horse pnpm dev
+```
+
+PowerShell 请使用：
+
+```powershell
+$env:VITE_EVENT_THEME="spring_festival_horse"; pnpm dev
 ```
 
 生产构建：
 
 ```bash
 VITE_EVENT_THEME=spring_festival_horse pnpm build
+```
+
+PowerShell 请使用：
+
+```powershell
+$env:VITE_EVENT_THEME="spring_festival_horse"; pnpm build
 ```
 
 可选值：

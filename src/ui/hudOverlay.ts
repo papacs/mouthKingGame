@@ -1,4 +1,5 @@
-import { ACTIVE_THEME, TUNING } from '../config/gameConfig';
+import { TUNING, getActiveTheme } from '../config/gameConfig';
+import { listThemeOptions, type ThemeId } from '../config/themes/springFestivalHorse';
 import type { GameState } from '../core/types';
 
 export function mountUI(): string {
@@ -8,9 +9,9 @@ export function mountUI(): string {
     <canvas id="game-canvas"></canvas>
 
     <section id="hud">
-      <div class="hud-title">${ACTIVE_THEME.title}</div>
+      <div id="hud-title" class="hud-title">嘴强王者</div>
       <div id="hud-level">等级 1</div>
-      <div id="hud-theme" class="hud-theme">${ACTIVE_THEME.displayName}</div>
+      <div id="hud-theme" class="hud-theme"></div>
       <div id="hud-event" class="hud-event"></div>
       <div id="hud-countdown" class="hud-countdown"></div>
       <div id="players"></div>
@@ -28,8 +29,10 @@ export function mountUI(): string {
     <section id="overlay-loading" class="overlay">AI 模型加载中...</section>
     <section id="overlay-intro" class="overlay hidden">
       <div>
-        <h1>${ACTIVE_THEME.introHeadline}</h1>
-        <p>${ACTIVE_THEME.introSubtitle}</p>
+        <h1 id="intro-headline"></h1>
+        <p id="intro-subtitle"></p>
+        <label class="theme-select-wrap" for="theme-select">主题</label>
+        <select id="theme-select"></select>
         <button id="btn-start">开始</button>
       </div>
     </section>
@@ -50,6 +53,32 @@ export function mountUI(): string {
       </div>
     </section>
   </main>`;
+}
+
+export function initThemeSelector(onChange?: (id: ThemeId) => void): void {
+  const select = document.getElementById('theme-select') as HTMLSelectElement | null;
+  if (!select) return;
+  const active = getActiveTheme();
+  const options = listThemeOptions()
+    .map((t) => `<option value="${t.id}"${t.id === active.id ? ' selected' : ''}>${t.label}</option>`)
+    .join('');
+  select.innerHTML = options;
+  select.onchange = () => {
+    const value = select.value as ThemeId;
+    onChange?.(value);
+  };
+}
+
+export function renderThemeText(): void {
+  const active = getActiveTheme();
+  const hudTitle = document.getElementById('hud-title') as HTMLElement | null;
+  const hudTheme = document.getElementById('hud-theme') as HTMLElement | null;
+  const introHeadline = document.getElementById('intro-headline') as HTMLElement | null;
+  const introSubtitle = document.getElementById('intro-subtitle') as HTMLElement | null;
+  if (hudTitle) hudTitle.textContent = active.title;
+  if (hudTheme) hudTheme.textContent = active.displayName;
+  if (introHeadline) introHeadline.textContent = active.introHeadline;
+  if (introSubtitle) introSubtitle.textContent = active.introSubtitle;
 }
 
 export function setScene(scene: GameState['scene']): void {
@@ -74,7 +103,7 @@ export function renderHud(state: GameState): void {
   level.textContent = `等级 ${state.level}`;
 
   let eventText = '';
-  const prefix = ACTIVE_THEME.eventPrefix ? `${ACTIVE_THEME.eventPrefix}·` : '';
+  const prefix = getActiveTheme().eventPrefix ? `${getActiveTheme().eventPrefix}·` : '';
   if (state.endgameFrames > 0) {
     eventText = `${prefix}疯狂模式 ${Math.ceil(state.endgameFrames / 60)}s`;
   } else if (state.stormFrames > 0) {

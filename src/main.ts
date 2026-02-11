@@ -1,10 +1,10 @@
 import './style.css';
 import { createFaceTracker } from './ai/faceTracker';
-import { MAX_PLAYERS, TUNING } from './config/gameConfig';
+import { MAX_PLAYERS, TUNING, setActiveTheme } from './config/gameConfig';
 import { updateGameplay } from './gameplay/gameplaySystem';
 import { createAudioSystem, drainSfxQueue } from './core/audioSystem';
 import { createInitialState, resetAllState, resetPlayingState } from './core/state';
-import { mountUI, renderDebugInfo, renderHud, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
+import { initThemeSelector, mountUI, renderDebugInfo, renderHud, renderThemeText, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
 import { renderGame } from './ui/render';
 
 const app = document.getElementById('app');
@@ -262,6 +262,12 @@ async function boot(): Promise<void> {
 
   state.scene = 'intro';
   setScene('intro');
+  renderThemeText();
+  initThemeSelector((id) => {
+    setActiveTheme(id);
+    renderThemeText();
+    renderHud(state);
+  });
   renderHud(state);
 
   const startButton = document.getElementById('btn-start') as HTMLButtonElement;

@@ -1,6 +1,6 @@
 import type { ItemConfig } from '../core/types';
 import { TUNING } from './tuning';
-import { getActiveTheme } from './themes/springFestivalHorse';
+import { getActiveTheme, setActiveTheme, type ThemeId } from './themes/springFestivalHorse';
 
 export const MAX_PLAYERS = 4;
 export const MAX_HP = 100;
@@ -39,12 +39,18 @@ const BASE_ITEMS: ItemConfig[] = [
 
 export { TUNING };
 
-export const ACTIVE_THEME = getActiveTheme();
+export { setActiveTheme };
+export type { ThemeId };
 
-export const ITEMS: ItemConfig[] = [...BASE_ITEMS, ...ACTIVE_THEME.extraItems].map((item) => {
-  const multiplier = ACTIVE_THEME.itemWeightMultiplier[item.id] ?? 1;
-  return {
-    ...item,
-    weight: Math.max(1, Math.round(item.weight * multiplier))
-  };
-});
+export function getItems(): ItemConfig[] {
+  const activeTheme = getActiveTheme();
+  return [...BASE_ITEMS, ...activeTheme.extraItems].map((item) => {
+    const multiplier = activeTheme.itemWeightMultiplier[item.id] ?? 1;
+    return {
+      ...item,
+      weight: Math.max(1, Math.round(item.weight * multiplier))
+    };
+  });
+}
+
+export { getActiveTheme };

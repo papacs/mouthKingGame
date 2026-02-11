@@ -51,8 +51,20 @@ function resolveThemeId(): ThemeId {
   return 'default';
 }
 
+let activeThemeId: ThemeId = resolveThemeId();
+
+export function setActiveTheme(id: ThemeId): void {
+  activeThemeId = id;
+}
+
 export function getActiveTheme(): ThemeConfig {
-  const id = resolveThemeId();
+  const id = activeThemeId;
   return id === 'spring_festival_horse' ? SPRING_FESTIVAL_HORSE_THEME : DEFAULT_THEME;
 }
 
+export function listThemeOptions(): Array<{ id: ThemeId; label: string }> {
+  return [
+    { id: 'default', label: DEFAULT_THEME.displayName },
+    { id: 'spring_festival_horse', label: SPRING_FESTIVAL_HORSE_THEME.displayName }
+  ];
+}

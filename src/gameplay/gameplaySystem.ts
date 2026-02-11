@@ -1,4 +1,4 @@
-import { ACTIVE_THEME, BALANCE_BY_PLAYERS, ITEMS, LOSER_MARKS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING } from '../config/gameConfig';
+import { BALANCE_BY_PLAYERS, LOSER_MARKS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING, getActiveTheme, getItems } from '../config/gameConfig';
 import type { FallingItem, GameState, ItemConfig, PlayerState } from '../core/types';
 
 function weightedPick(pool: ItemConfig[]): ItemConfig {
@@ -32,7 +32,7 @@ function spawnItems(state: GameState, width: number): void {
 
   const burst = activeCount >= 4 ? 3 : activeCount >= 2 ? 2 : 1;
   for (let i = 0; i < burst; i += 1) {
-    const weightedPool = ITEMS.map((item) => {
+    const weightedPool = getItems().map((item) => {
       let weight = item.weight;
       if (state.surpriseType === 'golden_rush' && item.id === 'golden') {
         weight = Math.max(1, Math.floor(weight * TUNING.surpriseGoldenMultiplier));
@@ -412,7 +412,7 @@ export function updateGameplay(state: GameState, width: number, height: number):
     }
     state.surpriseFrames = TUNING.surpriseDurationFrames;
     const festivalSurprise =
-      ACTIVE_THEME.id === 'spring_festival_horse'
+      getActiveTheme().id === 'spring_festival_horse'
         ? state.surpriseType === 'golden_rush'
           ? '🎆'
           : state.surpriseType === 'double_drop'
