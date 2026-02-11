@@ -1,4 +1,8 @@
-const TWIKOO_CDN = 'https://cdn.staticfile.net/twikoo/1.6.44/twikoo.all.min.js';
+const TWIKOO_CDN_CANDIDATES = [
+  'https://cdn.staticfile.net/twikoo/1.6.44/twikoo.all.min.js',
+  'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js',
+  'https://unpkg.com/twikoo@1.6.44/dist/twikoo.all.min.js'
+];
 const COMMENT_CONTAINER_ID = 'twikoo-comments';
 const COMMENT_SERVER_URL =
   (import.meta.env.VITE_TWIKOO_ENV_ID as string | undefined) ?? `${window.location.origin}/twikoo`;
@@ -31,14 +35,26 @@ function ensureTwikooScript(): Promise<void> {
     });
   }
 
-  return new Promise((resolve, reject) => {
+  const tryLoad = (index: number, resolve: () => void, reject: (error: Error) => void): void => {
+    const src = TWIKOO_CDN_CANDIDATES[index];
+    if (!src) {
+      reject(new Error('Twikoo script load failed on all CDNs'));
+      return;
+    }
     const script = document.createElement('script');
-    script.src = TWIKOO_CDN;
+    script.src = src;
     script.async = true;
     script.dataset.plugin = 'twikoo';
     script.onload = () => resolve();
-    script.onerror = () => reject(new Error('Twikoo script load failed'));
+    script.onerror = () => {
+      script.remove();
+      tryLoad(index + 1, resolve, reject);
+    };
     document.head.appendChild(script);
+  };
+
+  return new Promise((resolve, reject) => {
+    tryLoad(0, resolve, reject);
   });
 }
 
