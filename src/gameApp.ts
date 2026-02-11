@@ -228,6 +228,10 @@ function loop(): void {
   }
 
   syncPlayersFromDetection();
+  if (pauseLockFrames > 0 && state.isPaused) {
+    state.isPaused = false;
+    setPausedOverlay(false);
+  }
   updateGameplay(state, canvas.width, canvas.height);
   drainSfxQueue(audio, state.sfxQueue);
   renderGame(ctx, video, state);
@@ -285,9 +289,10 @@ async function boot(): Promise<void> {
     pendingCandidates = [];
     resetPlayingState(state);
     state.scene = 'playing';
+    state.isPaused = false;
     setScene('playing');
     setPausedOverlay(false);
-    pauseLockFrames = 20;
+    pauseLockFrames = 120;
   };
 
   startButton.addEventListener('click', start);
@@ -300,7 +305,7 @@ async function boot(): Promise<void> {
     lastScene = state.scene;
     setScene('intro');
     setPausedOverlay(false);
-    pauseLockFrames = 20;
+    pauseLockFrames = 120;
   };
   resetAllButton?.addEventListener('click', resetAll);
   resetAllOverButton?.addEventListener('click', resetAll);
@@ -310,7 +315,7 @@ async function boot(): Promise<void> {
     audio.unlock();
     audio.play('ui_pause_off');
     setPausedOverlay(false);
-    pauseLockFrames = 20;
+    pauseLockFrames = 120;
   };
   resumeButton?.addEventListener('click', resumeFromPause);
   pausedOverlay?.addEventListener('click', (event: MouseEvent) => {
