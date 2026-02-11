@@ -5,6 +5,8 @@ export type ThemeId = 'default' | 'spring_festival_horse';
 export interface ThemeConfig {
   id: ThemeId;
   displayName: string;
+  previewIcon: string;
+  previewText: string;
   title: string;
   introHeadline: string;
   introSubtitle: string;
@@ -16,6 +18,8 @@ export interface ThemeConfig {
 export const DEFAULT_THEME: ThemeConfig = {
   id: 'default',
   displayName: '默认主题',
+  previewIcon: '🎯',
+  previewText: '经典规则，稳定上手',
   title: '嘴强王者',
   introHeadline: '最多 4 人同屏',
   introSubtitle: '每个人独立血量、分数、状态。张嘴吃道具冲分。',
@@ -27,6 +31,8 @@ export const DEFAULT_THEME: ThemeConfig = {
 export const SPRING_FESTIVAL_HORSE_THEME: ThemeConfig = {
   id: 'spring_festival_horse',
   displayName: '马上开吃',
+  previewIcon: '🧧',
+  previewText: '春节限时，福气加成',
   title: '嘴强王者·马上开吃',
   introHeadline: '春节限时：守住年夜饭',
   introSubtitle: '4 人同屏接福开吃，避开年兽陷阱，冲刺福气值。',
@@ -52,19 +58,16 @@ function resolveThemeId(): ThemeId {
 }
 
 let activeThemeId: ThemeId = resolveThemeId();
+const THEME_CATALOG: ThemeConfig[] = [DEFAULT_THEME, SPRING_FESTIVAL_HORSE_THEME];
 
 export function setActiveTheme(id: ThemeId): void {
   activeThemeId = id;
 }
 
 export function getActiveTheme(): ThemeConfig {
-  const id = activeThemeId;
-  return id === 'spring_festival_horse' ? SPRING_FESTIVAL_HORSE_THEME : DEFAULT_THEME;
+  return THEME_CATALOG.find((theme) => theme.id === activeThemeId) ?? DEFAULT_THEME;
 }
 
-export function listThemeOptions(): Array<{ id: ThemeId; label: string }> {
-  return [
-    { id: 'default', label: DEFAULT_THEME.displayName },
-    { id: 'spring_festival_horse', label: SPRING_FESTIVAL_HORSE_THEME.displayName }
-  ];
+export function listThemeOptions(): ThemeConfig[] {
+  return THEME_CATALOG;
 }

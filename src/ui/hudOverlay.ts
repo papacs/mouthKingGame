@@ -1,5 +1,5 @@
 import { TUNING, getActiveTheme } from '../config/gameConfig';
-import { listThemeOptions, type ThemeId } from '../config/themes/springFestivalHorse';
+import { listThemeOptions, type ThemeId, type ThemeConfig } from '../config/themes/springFestivalHorse';
 import type { GameState } from '../core/types';
 
 export function mountUI(): string {
@@ -31,8 +31,8 @@ export function mountUI(): string {
       <div>
         <h1 id="intro-headline"></h1>
         <p id="intro-subtitle"></p>
-        <label class="theme-select-wrap" for="theme-select">主题</label>
-        <select id="theme-select"></select>
+        <div class="theme-card-label">选择主题</div>
+        <div id="theme-cards" class="theme-cards"></div>
         <button id="btn-start">开始</button>
       </div>
     </section>
@@ -55,18 +55,38 @@ export function mountUI(): string {
   </main>`;
 }
 
+function renderThemeCard(theme: ThemeConfig, activeId: ThemeId): string {
+  const selectedClass = theme.id === activeId ? ' selected' : '';
+  return `<button class="theme-card${selectedClass}" data-theme-id="${theme.id}" type="button">
+    <div class="theme-card-icon">${theme.previewIcon}</div>
+    <div class="theme-card-name">${theme.displayName}</div>
+    <div class="theme-card-text">${theme.previewText}</div>
+  </button>`;
+}
+
+function updateThemeCardSelection(activeId: ThemeId): void {
+  const cards = Array.from(document.querySelectorAll('.theme-card')) as HTMLButtonElement[];
+  for (const card of cards) {
+    card.classList.toggle('selected', card.dataset.themeId === activeId);
+  }
+}
+
 export function initThemeSelector(onChange?: (id: ThemeId) => void): void {
-  const select = document.getElementById('theme-select') as HTMLSelectElement | null;
-  if (!select) return;
+  const container = document.getElementById('theme-cards') as HTMLElement | null;
+  if (!container) return;
   const active = getActiveTheme();
-  const options = listThemeOptions()
-    .map((t) => `<option value="${t.id}"${t.id === active.id ? ' selected' : ''}>${t.label}</option>`)
+  container.innerHTML = listThemeOptions()
+    .map((theme) => renderThemeCard(theme, active.id))
     .join('');
-  select.innerHTML = options;
-  select.onchange = () => {
-    const value = select.value as ThemeId;
-    onChange?.(value);
-  };
+  const cards = Array.from(container.querySelectorAll('.theme-card')) as HTMLButtonElement[];
+  for (const card of cards) {
+    card.onclick = () => {
+      const value = card.dataset.themeId as ThemeId | undefined;
+      if (!value) return;
+      updateThemeCardSelection(value);
+      onChange?.(value);
+    };
+  }
 }
 
 export function renderThemeText(): void {
