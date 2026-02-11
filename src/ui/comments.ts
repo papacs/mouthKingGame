@@ -1,6 +1,6 @@
 const TWIKOO_CDN = 'https://cdn.staticfile.net/twikoo/1.6.44/twikoo.all.min.js';
 const COMMENT_CONTAINER_ID = 'twikoo-comments';
-const COMMENT_SERVER_URL = 'https://cwd.liucfamily.cn';
+const COMMENT_SERVER_URL = (import.meta.env.VITE_TWIKOO_ENV_ID as string | undefined) ?? '/twikoo';
 const COMMENT_SITE_ID = 'mouthKingGame';
 
 type TwikooInitConfig = {

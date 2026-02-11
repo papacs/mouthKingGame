@@ -381,6 +381,11 @@ body.game-page #game-root {
   gap: 10px;
   justify-content: center;
 }
+.overlay-actions button {
+  background: rgba(44, 230, 255, 0.88);
+  color: #042039;
+  font-weight: 700;
+}
 
 .debug-panel {
   position: absolute;

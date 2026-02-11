@@ -27,6 +27,7 @@ let fpsFrames = 0;
 let fpsLastTs = performance.now();
 let lastScene = state.scene;
 let pendingCandidates: { x: number; y: number; frames: number; age: number }[] = [];
+const isTouchDevice = navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
 
 function resizeCanvas(): void {
   if (video.videoWidth > 0 && video.videoHeight > 0) {
@@ -271,6 +272,8 @@ async function boot(): Promise<void> {
   const resetAllButton = document.getElementById('btn-reset-all') as HTMLButtonElement | null;
   const resetAllOverButton = document.getElementById('btn-reset-all-over') as HTMLButtonElement | null;
   const backHomeButton = document.getElementById('btn-back-home') as HTMLButtonElement | null;
+  const resumeButton = document.getElementById('btn-resume') as HTMLButtonElement | null;
+  const pausedOverlay = document.getElementById('overlay-paused') as HTMLElement | null;
 
   const start = (): void => {
     const isRestart = state.scene === 'gameover';
@@ -296,6 +299,18 @@ async function boot(): Promise<void> {
   };
   resetAllButton?.addEventListener('click', resetAll);
   resetAllOverButton?.addEventListener('click', resetAll);
+  const resumeFromPause = (): void => {
+    if (!state.isPaused || state.scene !== 'playing') return;
+    state.isPaused = false;
+    audio.unlock();
+    audio.play('ui_pause_off');
+    setPausedOverlay(false);
+  };
+  resumeButton?.addEventListener('click', resumeFromPause);
+  pausedOverlay?.addEventListener('click', (event: MouseEvent) => {
+    if (event.target !== pausedOverlay) return;
+    resumeFromPause();
+  });
   backHomeButton?.addEventListener('click', () => {
     for (const track of mediaStream?.getTracks() ?? []) {
       track.stop();
@@ -308,7 +323,7 @@ async function boot(): Promise<void> {
       setDebugPanelVisible(showDebug);
       return;
     }
-    if (event.code === 'Space' || event.key.toLowerCase() === 'p') {
+    if (!isTouchDevice && (event.code === 'Space' || event.key.toLowerCase() === 'p')) {
       if (state.scene !== 'playing') return;
       if (event.code === 'Space') event.preventDefault();
       state.isPaused = !state.isPaused;

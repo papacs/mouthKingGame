@@ -44,12 +44,15 @@ export function mountUI(): string {
         </div>
       </div>
     </section>
-      <section id="overlay-paused" class="overlay hidden">
-        <div>
-          <h2>已暂停</h2>
-          <p>按 Space 或 P 继续</p>
+    <section id="overlay-paused" class="overlay hidden">
+      <div>
+        <h2>已暂停</h2>
+        <p>按 Space / P，或点击下方按钮继续</p>
+        <div class="overlay-actions">
+          <button id="btn-resume">继续游戏</button>
         </div>
-      </section>
+      </div>
+    </section>
   </main>`;
 }
 
