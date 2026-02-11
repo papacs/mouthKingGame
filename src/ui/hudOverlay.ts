@@ -1,4 +1,4 @@
-import { TUNING } from '../config/gameConfig';
+import { ACTIVE_THEME, TUNING } from '../config/gameConfig';
 import type { GameState } from '../core/types';
 
 export function mountUI(): string {
@@ -8,8 +8,9 @@ export function mountUI(): string {
     <canvas id="game-canvas"></canvas>
 
     <section id="hud">
-      <div class="hud-title">嘴强王者</div>
+      <div class="hud-title">${ACTIVE_THEME.title}</div>
       <div id="hud-level">等级 1</div>
+      <div id="hud-theme" class="hud-theme">${ACTIVE_THEME.displayName}</div>
       <div id="hud-event" class="hud-event"></div>
       <div id="hud-countdown" class="hud-countdown"></div>
       <div id="players"></div>
@@ -27,8 +28,8 @@ export function mountUI(): string {
     <section id="overlay-loading" class="overlay">AI 模型加载中...</section>
     <section id="overlay-intro" class="overlay hidden">
       <div>
-        <h1>最多 4 人同屏</h1>
-        <p>每个人独立血量、分数、状态。张嘴吃道具冲分。</p>
+        <h1>${ACTIVE_THEME.introHeadline}</h1>
+        <p>${ACTIVE_THEME.introSubtitle}</p>
         <button id="btn-start">开始</button>
       </div>
     </section>
@@ -73,12 +74,13 @@ export function renderHud(state: GameState): void {
   level.textContent = `等级 ${state.level}`;
 
   let eventText = '';
+  const prefix = ACTIVE_THEME.eventPrefix ? `${ACTIVE_THEME.eventPrefix}·` : '';
   if (state.endgameFrames > 0) {
-    eventText = `疯狂模式 ${Math.ceil(state.endgameFrames / 60)}s`;
+    eventText = `${prefix}疯狂模式 ${Math.ceil(state.endgameFrames / 60)}s`;
   } else if (state.stormFrames > 0) {
-    eventText = `风暴期 ${Math.ceil(state.stormFrames / 60)}s`;
+    eventText = `${prefix}风暴期 ${Math.ceil(state.stormFrames / 60)}s`;
   } else if (state.slowFrames > 0) {
-    eventText = `减速 ${Math.ceil(state.slowFrames / 60)}s`;
+    eventText = `${prefix}减速 ${Math.ceil(state.slowFrames / 60)}s`;
   }
   event.textContent = eventText;
   const remaining = TUNING.matchDurationFrames - state.frame;

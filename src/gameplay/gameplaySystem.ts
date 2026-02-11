@@ -1,4 +1,4 @@
-import { BALANCE_BY_PLAYERS, ITEMS, LOSER_MARKS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING } from '../config/gameConfig';
+import { ACTIVE_THEME, BALANCE_BY_PLAYERS, ITEMS, LOSER_MARKS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING } from '../config/gameConfig';
 import type { FallingItem, GameState, ItemConfig, PlayerState } from '../core/types';
 
 function weightedPick(pool: ItemConfig[]): ItemConfig {
@@ -63,7 +63,7 @@ function spawnItems(state: GameState, width: number): void {
   }
 }
 
-function markEliminated(player: PlayerState, state: GameState): void {
+function markEliminated(player: PlayerState): void {
   if (player.eliminated || player.hp > 0) return;
   player.eliminated = true;
   if (!player.loserMark) {
@@ -263,6 +263,45 @@ function applyPlayerHit(player: PlayerState, item: FallingItem, state: GameState
         size: 30
       });
       break;
+    case 'red_packet':
+      player.score += 80;
+      if (Math.random() < 0.2) {
+        state.surpriseType = 'golden_rush';
+        state.surpriseFrames = Math.max(state.surpriseFrames, TUNING.surpriseDurationFrames);
+      }
+      state.floatTexts.push({
+        text: '🧧',
+        x: item.x,
+        y: item.y - 18,
+        color: '#ffcf5c',
+        life: 45,
+        size: 30
+      });
+      break;
+    case 'orange':
+      player.hp = Math.min(MAX_HP, player.hp + 8);
+      player.combo = Math.max(1, player.combo);
+      break;
+    case 'dumpling':
+      player.hp = Math.min(MAX_HP, player.hp + 5);
+      player.shieldFrames = Math.max(player.shieldFrames, 90);
+      break;
+    case 'horse_cake':
+      player.magnetFrames = Math.max(player.magnetFrames, 180);
+      break;
+    case 'firecracker':
+      trapDamage = 18;
+      state.shakeFrames = Math.max(state.shakeFrames, 14);
+      state.trapFlashFrames = Math.max(state.trapFlashFrames, TUNING.trapFlashFrames);
+      state.floatTexts.push({
+        text: '🧨',
+        x: item.x,
+        y: item.y - 20,
+        color: '#ff8a5c',
+        life: 40,
+        size: 32
+      });
+      break;
     default:
       break;
   }
@@ -301,7 +340,7 @@ function applyPlayerHit(player: PlayerState, item: FallingItem, state: GameState
 
   player.score = Math.max(0, player.score + gained);
 
-  markEliminated(player, state);
+  markEliminated(player);
 
   if (
     player.combo > 0 &&
@@ -372,15 +411,26 @@ export function updateGameplay(state: GameState, width: number, height: number):
       state.slowFrames = Math.max(state.slowFrames, TUNING.surpriseFreezeFrames);
     }
     state.surpriseFrames = TUNING.surpriseDurationFrames;
+    const festivalSurprise =
+      ACTIVE_THEME.id === 'spring_festival_horse'
+        ? state.surpriseType === 'golden_rush'
+          ? '🎆'
+          : state.surpriseType === 'double_drop'
+            ? '🐎'
+            : state.surpriseType === 'trap_scare'
+              ? '🧨'
+              : '🧊'
+        : null;
     state.floatTexts.push({
       text:
-        state.surpriseType === 'golden_rush'
+        festivalSurprise ??
+        (state.surpriseType === 'golden_rush'
           ? '🌟'
           : state.surpriseType === 'double_drop'
             ? '🎉'
             : state.surpriseType === 'trap_scare'
               ? '👻'
-              : '🧊',
+              : '🧊'),
       x: width * 0.5,
       y: height * 0.18,
       color: '#ffffff',
@@ -425,7 +475,7 @@ export function updateGameplay(state: GameState, width: number, height: number):
       p.x = Math.min(0.98, Math.max(0.02, p.x + (Math.random() - 0.5) * jitter));
       p.y = Math.min(0.98, Math.max(0.02, p.y + (Math.random() - 0.5) * jitter));
     }
-    markEliminated(p, state);
+    markEliminated(p);
   }
 
   if (state.stormFrames > 0) state.stormFrames -= 1;

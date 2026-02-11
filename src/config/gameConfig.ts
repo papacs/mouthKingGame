@@ -1,64 +1,10 @@
 import type { ItemConfig } from '../core/types';
+import { TUNING } from './tuning';
+import { getActiveTheme } from './themes/springFestivalHorse';
 
 export const MAX_PLAYERS = 4;
 export const MAX_HP = 100;
 export const MAX_SUGAR = 100;
-
-export const TUNING = {
-  mouthOpenThreshold: 0.05,
-  mouthRadius: 50,
-  trackingMaxDistance: 0.2,
-  trackingLostGraceFrames: 18,
-  trackingMergeDistance: 0.06,
-  trackingCandidateMergeDistance: 0.08,
-  trackingCandidateMinDistance: 0.12,
-  trackingNewPlayerFrames: 12,
-  trackingCandidateMaxAge: 30,
-  hungerBaseDecay: 0.06,
-  hungerLevelDecay: 0.012,
-  levelScoreStep: 1500,
-  spawnBaseInterval: 52,
-  spawnMinInterval: 9,
-  spawnLevelSpeedup: 3,
-  spawnPlayerFactor: 0.25,
-  feverFrames: 240,
-  shieldFrames: 180,
-  maskFrames: 120,
-  sunglassesFrames: 240,
-  healthyStreakForSunglasses: 3,
-  kissCooldownFrames: 90,
-  stormIntervalFrames: 1800,
-  stormDurationFrames: 300,
-  stormSpawnMultiplier: 0.6,
-  stormScoreMultiplier: 1.5,
-  matchDurationFrames: 10800,
-  endgameDurationFrames: 600,
-  endgameScoreMultiplier: 2,
-  endgameTrapWeightMultiplier: 1.6,
-  powerupSlowFrames: 240,
-  powerupMagnetFrames: 240,
-  powerupReflectFrames: 240,
-  powerupMagnetMultiplier: 1.35,
-  powerupSlowFallMultiplier: 0.55,
-  comboScoreBoostFrames: 300,
-  comboScoreBoostMultiplier: 1.1,
-  comboShieldFrames: 120,
-  comboFeverFrames: 180,
-  audienceIntervalFrames: 600,
-  audienceQuakeFrames: 90,
-  audienceSugarBoost: 20,
-  dizzyFrames: 180,
-  poopStormFrames: 180,
-  trapFlashFrames: 18,
-  bombShakeFrames: 22,
-  surpriseIntervalFrames: 1200,
-  surpriseDurationFrames: 180,
-  surpriseScareFrames: 120,
-  surpriseFreezeFrames: 90,
-  surpriseGoldenMultiplier: 4,
-  surpriseTrapMultiplier: 1.5,
-  dropSpeedMultiplier: 1.25
-};
 
 export const BALANCE_BY_PLAYERS: Record<number, { trapWeightMultiplier: number; fallSpeedMultiplier: number }> = {
   1: { trapWeightMultiplier: 1.0, fallSpeedMultiplier: 1.0 },
@@ -69,7 +15,7 @@ export const BALANCE_BY_PLAYERS: Record<number, { trapWeightMultiplier: number; 
 
 export const LOSER_MARKS = ['😷', '🐷', '🤐', '💀'];
 
-export const ITEMS: ItemConfig[] = [
+const BASE_ITEMS: ItemConfig[] = [
   { id: 'apple', emoji: '🍎', name: '苹果', score: 10, type: 'healthy', weight: 16, sfxKey: 'item_healthy' },
   { id: 'broccoli', emoji: '🥦', name: '西兰花', score: 8, type: 'healthy', weight: 12, sfxKey: 'item_healthy' },
   { id: 'cucumber', emoji: '🥒', name: '黄瓜', score: 6, type: 'healthy', weight: 10, sfxKey: 'item_healthy' },
@@ -90,3 +36,15 @@ export const ITEMS: ItemConfig[] = [
   { id: 'clear', emoji: '💥', name: '清屏', score: 0, type: 'buff', weight: 1, sfxKey: 'item_buff' },
   { id: 'reflect', emoji: '🔁', name: '反伤', score: 0, type: 'buff', weight: 2, sfxKey: 'item_buff' }
 ];
+
+export { TUNING };
+
+export const ACTIVE_THEME = getActiveTheme();
+
+export const ITEMS: ItemConfig[] = [...BASE_ITEMS, ...ACTIVE_THEME.extraItems].map((item) => {
+  const multiplier = ACTIVE_THEME.itemWeightMultiplier[item.id] ?? 1;
+  return {
+    ...item,
+    weight: Math.max(1, Math.round(item.weight * multiplier))
+  };
+});

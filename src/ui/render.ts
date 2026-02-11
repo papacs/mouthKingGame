@@ -1,4 +1,4 @@
-import { TUNING } from '../config/gameConfig';
+import { ACTIVE_THEME, TUNING } from '../config/gameConfig';
 import type { GameState } from '../core/types';
 
 const PLAYER_COLORS = ['#2ecc71', '#3498db', '#f39c12', '#e74c3c'];
@@ -18,6 +18,24 @@ export function renderGame(ctx: CanvasRenderingContext2D, video: HTMLVideoElemen
 
   if (video.readyState >= 2) {
     ctx.drawImage(video, 0, 0, width, height);
+  }
+
+  if (ACTIVE_THEME.id === 'spring_festival_horse') {
+    ctx.save();
+    ctx.globalAlpha = 0.18;
+    const pulse = 0.85 + 0.15 * Math.sin(state.frame * 0.04);
+    const lanterns = 5;
+    for (let i = 0; i < lanterns; i += 1) {
+      const x = ((i + 1) * width) / (lanterns + 1);
+      const y = 54 + (i % 2) * 16;
+      ctx.fillStyle = `rgba(230, 56, 70, ${0.6 * pulse})`;
+      ctx.beginPath();
+      ctx.ellipse(x, y, 18, 24, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255, 215, 102, 0.9)';
+      ctx.fillRect(x - 2, y + 24, 4, 14);
+    }
+    ctx.restore();
   }
 
   ctx.save();
