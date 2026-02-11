@@ -28,6 +28,7 @@ let fpsLastTs = performance.now();
 let lastScene = state.scene;
 let pendingCandidates: { x: number; y: number; frames: number; age: number }[] = [];
 const isTouchDevice = navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+let pauseLockFrames = 0;
 
 function resizeCanvas(): void {
   if (video.videoWidth > 0 && video.videoHeight > 0) {
@@ -244,6 +245,7 @@ function loop(): void {
   }
   lastScene = state.scene;
   if (state.scene === 'gameover') setScene('gameover');
+  if (pauseLockFrames > 0) pauseLockFrames -= 1;
 
   requestAnimationFrame(loop);
 }
@@ -285,6 +287,7 @@ async function boot(): Promise<void> {
     state.scene = 'playing';
     setScene('playing');
     setPausedOverlay(false);
+    pauseLockFrames = 20;
   };
 
   startButton.addEventListener('click', start);
@@ -297,6 +300,7 @@ async function boot(): Promise<void> {
     lastScene = state.scene;
     setScene('intro');
     setPausedOverlay(false);
+    pauseLockFrames = 20;
   };
   resetAllButton?.addEventListener('click', resetAll);
   resetAllOverButton?.addEventListener('click', resetAll);
@@ -306,6 +310,7 @@ async function boot(): Promise<void> {
     audio.unlock();
     audio.play('ui_pause_off');
     setPausedOverlay(false);
+    pauseLockFrames = 20;
   };
   resumeButton?.addEventListener('click', resumeFromPause);
   pausedOverlay?.addEventListener('click', (event: MouseEvent) => {
@@ -325,6 +330,7 @@ async function boot(): Promise<void> {
       return;
     }
     if (!isTouchDevice && (event.code === 'Space' || event.key.toLowerCase() === 'p')) {
+      if (event.repeat || pauseLockFrames > 0) return;
       if (state.scene !== 'playing') return;
       if (event.code === 'Space') event.preventDefault();
       state.isPaused = !state.isPaused;

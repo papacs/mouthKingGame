@@ -93,6 +93,14 @@ VITE_EVENT_THEME=spring_festival_horse pnpm dev
 - `VITE_TWIKOO_ENV_ID`：前端 `envId` 覆盖值（推荐填完整后端地址）
 - `TWIKOO_ENV_ID`：反代层对 `env` 参数覆盖值（仅 Functions 转发时生效）
 
+本地或自托管可参考 `.env.example`，默认使用同域 `/twikoo` 反代。
+
+Cloudflare Pages 环境变量设置步骤：
+
+1. 进入 Pages 项目 -> Settings -> Environment variables
+2. 删除 `VITE_TWIKOO_ENV_ID` 或将其设置为 `/twikoo`
+3. 触发一次新的部署
+
 常见问题：
 
 - 提交评论请求 `https://<你的域名>/twikoo` 返回 404：说明 Pages Functions 未生效（Root directory 不在仓库根目录或 Functions 未启用），可修复 Functions 或直接配置 `VITE_TWIKOO_ENV_ID` 绕过反代。
