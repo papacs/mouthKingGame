@@ -252,9 +252,24 @@ function loop(): void {
 async function boot(): Promise<void> {
   setScene('loading');
 
-  const stream = await navigator.mediaDevices.getUserMedia({
-    video: { width: 1280, height: 720, facingMode: 'user' }
-  });
+  const cameraProfiles: MediaStreamConstraints[] = [
+    { video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' }, audio: false },
+    { video: { width: { ideal: 960 }, height: { ideal: 540 }, facingMode: 'user' }, audio: false },
+    { video: { facingMode: 'user' }, audio: false },
+    { video: true, audio: false }
+  ];
+
+  let stream: MediaStream | null = null;
+  let lastError: unknown = null;
+  for (const profile of cameraProfiles) {
+    try {
+      stream = await navigator.mediaDevices.getUserMedia(profile);
+      break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (!stream) throw lastError instanceof Error ? lastError : new Error('摄像头初始化失败');
   mediaStream = stream;
 
   video.srcObject = stream;
