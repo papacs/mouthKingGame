@@ -54,6 +54,7 @@ export function createInitialState(): GameState {
     poopStormFrames: 0,
     trapFlashFrames: 0,
     poopSplats: [],
+    reverseFrames: 0,
     surpriseFrames: 0,
     surpriseType: null
   };
@@ -77,6 +78,7 @@ export function resetPlayingState(state: GameState): void {
   state.poopStormFrames = 0;
   state.trapFlashFrames = 0;
   state.poopSplats = [];
+  state.reverseFrames = 0;
   state.surpriseFrames = 0;
   state.surpriseType = null;
 }
@@ -99,6 +101,7 @@ export function resetAllState(state: GameState): void {
   state.poopStormFrames = 0;
   state.trapFlashFrames = 0;
   state.poopSplats = [];
+  state.reverseFrames = 0;
   state.surpriseFrames = 0;
   state.surpriseType = null;
 }

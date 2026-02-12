@@ -29,10 +29,11 @@ const BASE_ITEMS: ItemConfig[] = [
   { id: 'water', emoji: '💧', name: '水', score: 8, type: 'buff', weight: 4, sfxKey: 'item_buff' },
   { id: 'clock', emoji: '🕒', name: '怀表', score: 8, type: 'buff', weight: 3, sfxKey: 'item_buff' },
   { id: 'shield', emoji: '🛡️', name: '护盾', score: 8, type: 'buff', weight: 3, sfxKey: 'item_buff' },
-  { id: 'brush', emoji: '🪥', name: '牙刷', score: 8, type: 'buff', weight: 3, sfxKey: 'item_buff' },
+  { id: 'brush', emoji: '🧼', name: '牙刷', score: 8, type: 'buff', weight: 3, sfxKey: 'item_buff' },
   { id: 'golden', emoji: '🌟', name: '金苹果', score: 150, type: 'buff', weight: 1, sfxKey: 'item_buff' },
   { id: 'slow', emoji: '⏳', name: '时停', score: 0, type: 'buff', weight: 2, sfxKey: 'item_buff' },
   { id: 'magnet', emoji: '🧲', name: '磁吸', score: 0, type: 'buff', weight: 2, sfxKey: 'item_buff' },
+  { id: 'reverse', emoji: '🌀', name: '反向风', score: 0, type: 'buff', weight: 2, sfxKey: 'item_buff' },
   { id: 'clear', emoji: '💥', name: '清屏', score: 0, type: 'buff', weight: 1, sfxKey: 'item_buff' },
   { id: 'reflect', emoji: '🔁', name: '反伤', score: 0, type: 'buff', weight: 2, sfxKey: 'item_buff' }
 ];

@@ -10,6 +10,7 @@ export const ITEM_EFFECT_GUIDE: Record<string, string> = {
   golden: '血量回满并额外高分',
   slow: '全局减速，争取处理时间',
   magnet: '磁吸道具，扩大吃取优势',
+  reverse: '反向风暴，掉落改为从下往上',
   clear: '清除屏幕当前掉落物',
   reflect: '短时反伤，陷阱可转收益',
   red_packet: '额外高分，概率触发惊喜事件',

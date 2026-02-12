@@ -1,4 +1,5 @@
 import { BALANCE_BY_PLAYERS, LOSER_MARKS, MAX_HP, MAX_PLAYERS, MAX_SUGAR, TUNING, getActiveTheme, getItems } from '../config/gameConfig';
+import { getGameplayModifiers } from '../config/userSettings';
 import type { FallingItem, GameState, ItemConfig, PlayerState } from '../core/types';
 
 function weightedPick(pool: ItemConfig[]): ItemConfig {
@@ -11,10 +12,11 @@ function weightedPick(pool: ItemConfig[]): ItemConfig {
   return pool[0];
 }
 
-function spawnItems(state: GameState, width: number): void {
+function spawnItems(state: GameState, width: number, height: number): void {
   const activeCount = state.players.filter((p) => p.active && p.hp > 0).length;
   if (activeCount === 0) return;
   const balance = BALANCE_BY_PLAYERS[Math.min(MAX_PLAYERS, activeCount)] ?? BALANCE_BY_PLAYERS[1];
+  const { spawnIntervalScale, fallSpeedScale } = getGameplayModifiers();
 
   const baseInterval = Math.max(
     TUNING.spawnMinInterval,
@@ -28,8 +30,11 @@ function spawnItems(state: GameState, width: number): void {
     interval = Math.max(TUNING.spawnMinInterval, Math.floor(interval * TUNING.stormSpawnMultiplier));
   }
 
+  interval = Math.max(TUNING.spawnMinInterval, Math.floor(interval * spawnIntervalScale));
+
   if (state.frame % Math.floor(interval) !== 0) return;
 
+  const padding = Math.max(TUNING.spawnPaddingMinPx, Math.floor(width * TUNING.spawnPaddingRatio));
   const burst = activeCount >= 4 ? 3 : activeCount >= 2 ? 2 : 1;
   for (let i = 0; i < burst; i += 1) {
     const weightedPool = getItems().map((item) => {
@@ -49,15 +54,21 @@ function spawnItems(state: GameState, width: number): void {
       return { ...item, weight };
     });
     const selected = weightedPick(weightedPool);
+    const isReverse = state.reverseFrames > 0;
+    const baseY = isReverse ? height + 30 + i * 22 : -30 - i * 22;
     const item: FallingItem = {
       ...selected,
-      x: Math.random() * (width - 60) + 30,
-      y: -30 - i * 22,
+      x: Math.random() * (width - padding * 2) + padding,
+      y: baseY,
       vy:
         (2.8 + state.level * 0.45 + Math.random() * 0.7) *
         balance.fallSpeedMultiplier *
+        fallSpeedScale *
         (state.surpriseType === 'double_drop' ? TUNING.dropSpeedMultiplier : 1)
     };
+    if (isReverse) {
+      item.vy = -item.vy * TUNING.powerupReverseSpeedMultiplier;
+    }
 
     state.items.push(item);
   }
@@ -237,6 +248,17 @@ function applyPlayerHit(player: PlayerState, item: FallingItem, state: GameState
         x: item.x,
         y: item.y - 18,
         color: '#ff6f61',
+        life: 45,
+        size: 30
+      });
+      break;
+    case 'reverse':
+      state.reverseFrames = Math.max(state.reverseFrames, TUNING.powerupReverseFrames);
+      state.floatTexts.push({
+        text: '🌀',
+        x: item.x,
+        y: item.y - 18,
+        color: '#8fd6ff',
         life: 45,
         size: 30
       });
@@ -482,6 +504,7 @@ export function updateGameplay(state: GameState, width: number, height: number):
   if (state.endgameFrames > 0) state.endgameFrames -= 1;
   if (state.slowFrames > 0) state.slowFrames -= 1;
   if (state.audienceCooldownFrames > 0) state.audienceCooldownFrames -= 1;
+  if (state.reverseFrames > 0) state.reverseFrames -= 1;
   if (state.poopStormFrames > 0) {
     state.poopStormFrames -= 1;
     if (state.poopStormFrames === 0) {
@@ -545,13 +568,37 @@ export function updateGameplay(state: GameState, width: number, height: number):
     }
   }
 
-  spawnItems(state, width);
+  spawnItems(state, width, height);
 
   const fallMultiplier = state.slowFrames > 0 ? TUNING.powerupSlowFallMultiplier : 1;
+  const magnetPlayers = state.players.filter((p) => p.active && p.magnetFrames > 0);
   for (const item of state.items) {
     item.y += item.vy * fallMultiplier;
+    if (magnetPlayers.length > 0) {
+      let closest: PlayerState | null = null;
+      let closestDist = Number.POSITIVE_INFINITY;
+      for (const p of magnetPlayers) {
+        const px = p.x * width;
+        const py = p.y * height;
+        const dist = Math.hypot(px - item.x, py - item.y);
+        if (dist < closestDist) {
+          closestDist = dist;
+          closest = p;
+        }
+      }
+      if (closest && closestDist <= TUNING.powerupMagnetPullRange) {
+        const px = closest.x * width;
+        const py = closest.y * height;
+        const dx = px - item.x;
+        const dy = py - item.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const pull = TUNING.powerupMagnetPullStrength;
+        item.x += (dx / len) * pull;
+        item.y += (dy / len) * pull;
+      }
+    }
   }
-  state.items = state.items.filter((item) => item.y < height + 40);
+  state.items = state.items.filter((item) => (item.vy < 0 ? item.y > -40 : item.y < height + 40));
 
   for (let i = state.items.length - 1; i >= 0; i -= 1) {
     const item = state.items[i];

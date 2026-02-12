@@ -1,6 +1,10 @@
 # Mouth King Game · 嘴强王者
 
-基于 `TypeScript + Vite + MediaPipe` 的多人摄像头体感小游戏。玩家通过“张嘴 + 头部位置”完成吃取判定，在高节奏掉落与道具反转中争夺分数。
+基于 `TypeScript + Vite + MediaPipe` 的多人摄像头体感小游戏。张嘴就是控制器：抢掉落、躲陷阱、连击翻盘，30 秒就能打出一局高能名场面。
+
+在线畅玩：`https://game.liucfamily.cn`
+
+隐私说明：视频流仅在本地浏览器内存中运行与计算，不上传、不存储。
 
 ## 特性
 

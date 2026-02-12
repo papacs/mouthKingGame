@@ -2,7 +2,9 @@ import './style.css';
 import { getActiveTheme, getItems, setActiveTheme, type ThemeId } from './config/gameConfig';
 import { ITEM_EFFECT_GUIDE } from './config/itemGuide';
 import { listThemeOptions } from './config/themes/springFestivalHorse';
+import { getFallSpeedOptions, getSpawnRateOptions, getUserSettings, setUserSettings, type FallSpeedId, type SpawnRateId } from './config/userSettings';
 import { initComments } from './ui/comments';
+import { prefetchVisionAssets } from './ai/preload';
 
 const appElement = document.getElementById('app') as HTMLElement | null;
 if (!appElement) throw new Error('Missing #app');
@@ -130,8 +132,16 @@ function updateModeSummary(): void {
 function mountHome(): void {
   document.body.classList.remove('game-page');
   commentsInited = false;
+  prefetchVisionAssets(import.meta.env.BASE_URL);
 
   const activeTheme = getActiveTheme();
+  const settings = getUserSettings();
+  const spawnOptions = getSpawnRateOptions()
+    .map((option) => `<option value="${option.id}"${option.id === settings.spawnRate ? ' selected' : ''}>${option.label}</option>`)
+    .join('');
+  const fallOptions = getFallSpeedOptions()
+    .map((option) => `<option value="${option.id}"${option.id === settings.fallSpeed ? ' selected' : ''}>${option.label}</option>`)
+    .join('');
   const themeCards = listThemeOptions()
     .map((theme) => {
       const selectedClass = theme.id === activeTheme.id ? ' selected' : '';
@@ -157,6 +167,19 @@ function mountHome(): void {
         <summary id="mode-summary" class="mode-summary">选择模式（当前：${activeTheme.displayName}）</summary>
         <div id="mode-cards" class="mode-cards">${themeCards}</div>
       </details>
+      <div class="home-settings">
+        <div class="home-settings-title">掉落节奏设置</div>
+        <div class="home-settings-row">
+          <label for="spawn-rate-select">掉落密度</label>
+          <select id="spawn-rate-select">${spawnOptions}</select>
+          <span class="home-settings-hint">影响刷出频率</span>
+        </div>
+        <div class="home-settings-row">
+          <label for="fall-speed-select">下落速度</label>
+          <select id="fall-speed-select">${fallOptions}</select>
+          <span class="home-settings-hint">影响移动速度</span>
+        </div>
+      </div>
       <button id="btn-enter-game" class="enter-game-btn" disabled>进入游戏</button>
     </section>
 
@@ -205,6 +228,17 @@ function mountHome(): void {
     if (!commentsDetails.open || commentsInited) return;
     commentsInited = true;
     void initComments();
+  });
+
+  const spawnSelect = document.getElementById('spawn-rate-select') as HTMLSelectElement | null;
+  spawnSelect?.addEventListener('change', () => {
+    const value = spawnSelect.value as SpawnRateId;
+    setUserSettings({ spawnRate: value });
+  });
+  const fallSelect = document.getElementById('fall-speed-select') as HTMLSelectElement | null;
+  fallSelect?.addEventListener('change', () => {
+    const value = fallSelect.value as FallSpeedId;
+    setUserSettings({ fallSpeed: value });
   });
 
   const recheckButton = document.getElementById('btn-recheck-camera') as HTMLButtonElement | null;

@@ -79,6 +79,7 @@ export interface GameState {
   poopStormFrames: number;
   trapFlashFrames: number;
   poopSplats: { x: number; y: number; r: number; alpha: number }[];
+  reverseFrames: number;
   surpriseFrames: number;
   surpriseType: 'golden_rush' | 'double_drop' | 'trap_scare' | 'freeze' | null;
 }

@@ -9,6 +9,7 @@ export interface DetectedMouth {
 
 export async function createFaceTracker(modelPath: string) {
   const wasmRoots = [
+    '/mediapipe/wasm',
     'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm',
     'https://unpkg.com/@mediapipe/tasks-vision@0.10.22/wasm'
   ];

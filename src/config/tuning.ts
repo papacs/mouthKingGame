@@ -15,6 +15,8 @@ export interface GameplayTuning {
   spawnMinInterval: number;
   spawnLevelSpeedup: number;
   spawnPlayerFactor: number;
+  spawnPaddingRatio: number;
+  spawnPaddingMinPx: number;
   feverFrames: number;
   shieldFrames: number;
   maskFrames: number;
@@ -33,7 +35,11 @@ export interface GameplayTuning {
   powerupMagnetFrames: number;
   powerupReflectFrames: number;
   powerupMagnetMultiplier: number;
+  powerupMagnetPullRange: number;
+  powerupMagnetPullStrength: number;
   powerupSlowFallMultiplier: number;
+  powerupReverseFrames: number;
+  powerupReverseSpeedMultiplier: number;
   comboScoreBoostFrames: number;
   comboScoreBoostMultiplier: number;
   comboShieldFrames: number;
@@ -71,6 +77,8 @@ export const TUNING: GameplayTuning = {
   spawnMinInterval: 9,
   spawnLevelSpeedup: 3,
   spawnPlayerFactor: 0.25,
+  spawnPaddingRatio: 0.06,
+  spawnPaddingMinPx: 32,
   feverFrames: 240,
   shieldFrames: 180,
   maskFrames: 120,
@@ -88,8 +96,12 @@ export const TUNING: GameplayTuning = {
   powerupSlowFrames: 240,
   powerupMagnetFrames: 240,
   powerupReflectFrames: 240,
-  powerupMagnetMultiplier: 1.35,
+  powerupMagnetMultiplier: 1.8,
+  powerupMagnetPullRange: 180,
+  powerupMagnetPullStrength: 5.5,
   powerupSlowFallMultiplier: 0.55,
+  powerupReverseFrames: 240,
+  powerupReverseSpeedMultiplier: 0.95,
   comboScoreBoostFrames: 300,
   comboScoreBoostMultiplier: 1.1,
   comboShieldFrames: 120,
