@@ -1,5 +1,13 @@
 # Mouth King Game · 嘴强王者
 
+每年春节，大家都在说“多陪陪家人”。
+但现实常常是：大人刷手机，小孩抢平板，
+年轻人瘫在沙发上喊“再来一把”。 
+我一直想做一件小事：
+让客厅里的笑声，能被一个网页重新点燃。
+于是有了这个开源小游戏项目：
+Mouth King Game（嘴强王者）。
+
 基于 `TypeScript + Vite + MediaPipe` 的多人摄像头体感小游戏。张嘴就是控制器：抢掉落、躲陷阱、连击翻盘，30 秒就能打出一局高能名场面。
 
 在线畅玩：[https://game.liucfamily.cn](https://game.liucfamily.cn)
@@ -131,3 +139,17 @@ Cloudflare Pages 环境变量设置步骤：
 
 - 代码：`AGPL-3.0-only`（见 `LICENSE`）
 - 非代码资源：`CC BY-NC-SA 4.0`（见 `LICENSE.assets`）
+
+## ❤️ 支持与赞助 (Sponsorship)
+
+维护这个“靠嘴输出”的项目其实很费头发。
+如果你觉得这个游戏让你的春节聚会更有趣了，欢迎：
+
+1. **给个 Star ⭐️**：这对我最重要！
+2. **提交 Issue/PR**：不管是新玩法脑洞，还是修 Bug。
+3. **请作者吃个润喉糖**：点击下方展开二维码 👇
+
+<details>
+<summary>🧧 给作者发个春节红包</summary>
+...暂无哈哈哈...
+</details>
