@@ -8,16 +8,36 @@ export interface DetectedMouth {
 }
 
 export async function createFaceTracker(modelPath: string) {
-  const resolver = await FilesetResolver.forVisionTasks(
-    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.0/wasm'
-  );
+  const wasmRoots = [
+    'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.22/wasm',
+    'https://unpkg.com/@mediapipe/tasks-vision@0.10.22/wasm'
+  ];
+  const delegates: Array<'GPU' | 'CPU'> = ['GPU', 'CPU'];
 
-  const landmarker = await FaceLandmarker.createFromOptions(resolver, {
-    baseOptions: { modelAssetPath: modelPath, delegate: 'GPU' },
-    runningMode: 'VIDEO',
-    numFaces: MAX_PLAYERS,
-    outputFaceBlendshapes: false
-  });
+  let lastError: unknown = null;
+  let landmarker: FaceLandmarker | null = null;
+  for (const wasmRoot of wasmRoots) {
+    try {
+      const resolver = await FilesetResolver.forVisionTasks(wasmRoot);
+      for (const delegate of delegates) {
+        try {
+          landmarker = await FaceLandmarker.createFromOptions(resolver, {
+            baseOptions: { modelAssetPath: modelPath, delegate },
+            runningMode: 'VIDEO',
+            numFaces: MAX_PLAYERS,
+            outputFaceBlendshapes: false
+          });
+          break;
+        } catch (error) {
+          lastError = error;
+        }
+      }
+      if (landmarker) break;
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  if (!landmarker) throw lastError instanceof Error ? lastError : new Error('Face tracker 初始化失败');
 
   return {
     detect(video: HTMLVideoElement): DetectedMouth[] {
