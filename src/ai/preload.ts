@@ -1,16 +1,19 @@
 let prefetching = false;
 
 function idle(callback: () => void): void {
-  if (typeof window === 'undefined') return;
-  if ('requestIdleCallback' in window) {
-    (window.requestIdleCallback as (cb: () => void) => void)(callback);
+  if (typeof globalThis === 'undefined') return;
+  const root = globalThis as typeof globalThis & {
+    requestIdleCallback?: (cb: () => void) => void;
+  };
+  if (root.requestIdleCallback) {
+    root.requestIdleCallback(callback);
     return;
   }
-  window.setTimeout(callback, 200);
+  setTimeout(callback, 200);
 }
 
 export function prefetchVisionAssets(baseUrl: string): void {
-  if (prefetching || typeof window === 'undefined') return;
+  if (prefetching || typeof globalThis === 'undefined') return;
   prefetching = true;
 
   const wasmBase = `${baseUrl}mediapipe/wasm`;
