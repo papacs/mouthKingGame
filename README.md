@@ -2,7 +2,9 @@
 
 基于 `TypeScript + Vite + MediaPipe` 的多人摄像头体感小游戏。张嘴就是控制器：抢掉落、躲陷阱、连击翻盘，30 秒就能打出一局高能名场面。
 
-在线畅玩：`https://game.liucfamily.cn`
+在线畅玩：[https://game.liucfamily.cn](https://game.liucfamily.cn)
+
+![在线畅玩](img/acf71e17-1e55-42d8-b535-a9ad9dd489bc.png)
 
 隐私说明：视频流仅在本地浏览器内存中运行与计算，不上传、不存储。
 
