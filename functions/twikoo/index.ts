@@ -8,8 +8,12 @@ export const onRequest = async (context: TwikooProxyContext): Promise<Response> 
   const targetQuery = new URLSearchParams(url.search);
   const incomingEnv = targetQuery.get('env');
   const boundEnvId = context.env?.TWIKOO_ENV_ID?.trim();
-  if (incomingEnv === '/twikoo' && boundEnvId) {
-    targetQuery.set('env', boundEnvId);
+  if (incomingEnv === '/twikoo') {
+    if (boundEnvId) {
+      targetQuery.set('env', boundEnvId);
+    } else {
+      targetQuery.delete('env');
+    }
   }
   const queryText = targetQuery.toString();
   const targetUrl = `https://cwd.liucfamily.cn/${queryText ? `?${queryText}` : ''}`;

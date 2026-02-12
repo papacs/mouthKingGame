@@ -1,50 +1,60 @@
-const TWIKOO_CDN_CANDIDATES = [
-  'https://cdn.staticfile.net/twikoo/1.6.44/twikoo.all.min.js',
-  'https://cdn.jsdelivr.net/npm/twikoo@1.6.44/dist/twikoo.all.min.js',
-  'https://unpkg.com/twikoo@1.6.44/dist/twikoo.all.min.js'
+const CWD_CDN_CANDIDATES = [
+  'https://unpkg.com/cwd-widget@latest/dist/cwd.js',
+  'https://cdn.jsdelivr.net/npm/cwd-widget@latest/dist/cwd.js'
 ];
 const COMMENT_CONTAINER_ID = 'twikoo-comments';
-const COMMENT_SERVER_URL =
-  (import.meta.env.VITE_TWIKOO_ENV_ID as string | undefined) ?? `${window.location.origin}/twikoo`;
+function resolveCommentApiBaseUrl(): string {
+  const explicit = (import.meta.env.VITE_COMMENT_API_BASE_URL as string | undefined)?.trim();
+  if (explicit) return explicit;
+
+  const legacy = (import.meta.env.VITE_TWIKOO_ENV_ID as string | undefined)?.trim();
+  if (legacy && /^https?:\/\//i.test(legacy)) return legacy;
+
+  return 'https://cwd.liucfamily.cn';
+}
+const COMMENT_API_BASE_URL = resolveCommentApiBaseUrl();
 const COMMENT_SITE_ID = 'mouthKingGame';
 
-type TwikooInitConfig = {
-  envId: string;
-  el: string;
+type CwdCommentsConfig = {
+  el: string | HTMLElement;
+  apiBaseUrl: string;
   lang?: string;
   siteId?: string;
+  postSlug?: string;
 };
 
-type TwikooGlobal = {
-  init: (config: TwikooInitConfig) => void;
+type CwdCommentsInstance = {
+  mount: () => void;
 };
+
+type CwdCommentsCtor = new (config: CwdCommentsConfig) => CwdCommentsInstance;
 
 declare global {
   interface Window {
-    twikoo?: TwikooGlobal;
+    CWDComments?: CwdCommentsCtor;
   }
 }
 
-function ensureTwikooScript(): Promise<void> {
-  const existed = document.querySelector('script[data-plugin="twikoo"]') as HTMLScriptElement | null;
+function ensureCwdScript(): Promise<void> {
+  const existed = document.querySelector('script[data-plugin="cwd-comments"]') as HTMLScriptElement | null;
   if (existed) {
-    if (window.twikoo) return Promise.resolve();
+    if (window.CWDComments) return Promise.resolve();
     return new Promise((resolve, reject) => {
       existed.addEventListener('load', () => resolve(), { once: true });
-      existed.addEventListener('error', () => reject(new Error('Twikoo script load failed')), { once: true });
+      existed.addEventListener('error', () => reject(new Error('CWD comments script load failed')), { once: true });
     });
   }
 
   const tryLoad = (index: number, resolve: () => void, reject: (error: Error) => void): void => {
-    const src = TWIKOO_CDN_CANDIDATES[index];
+    const src = CWD_CDN_CANDIDATES[index];
     if (!src) {
-      reject(new Error('Twikoo script load failed on all CDNs'));
+      reject(new Error('CWD comments script load failed on all CDNs'));
       return;
     }
     const script = document.createElement('script');
     script.src = src;
     script.async = true;
-    script.dataset.plugin = 'twikoo';
+    script.dataset.plugin = 'cwd-comments';
     script.onload = () => resolve();
     script.onerror = () => {
       script.remove();
@@ -63,13 +73,17 @@ export async function initComments(): Promise<void> {
   if (!container) return;
 
   try {
-    await ensureTwikooScript();
-    window.twikoo?.init({
-      envId: COMMENT_SERVER_URL,
+    await ensureCwdScript();
+    const CWDComments = window.CWDComments;
+    if (!CWDComments) throw new Error('CWDComments not found on window');
+    const comments = new CWDComments({
       el: `#${COMMENT_CONTAINER_ID}`,
+      apiBaseUrl: COMMENT_API_BASE_URL,
       lang: 'zh-CN',
-      siteId: COMMENT_SITE_ID
+      siteId: COMMENT_SITE_ID,
+      postSlug: window.location.pathname || '/'
     });
+    comments.mount();
   } catch (error) {
     container.innerHTML = '<p>评论区加载失败，请稍后重试。</p>';
     console.error(error);

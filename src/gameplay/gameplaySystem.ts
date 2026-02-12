@@ -395,7 +395,7 @@ function applyPlayerHit(player: PlayerState, item: FallingItem, state: GameState
 }
 
 export function updateGameplay(state: GameState, width: number, height: number): void {
-  if (state.scene !== 'playing' || state.isPaused) return;
+  if (state.scene !== 'playing') return;
 
   state.frame += 1;
   if (state.frame > 0 && state.frame % TUNING.surpriseIntervalFrames === 0) {

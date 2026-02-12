@@ -14,6 +14,8 @@ export const onRequest = async (context: TwikooProxyContext): Promise<Response> 
   if (incomingEnv === '/twikoo') {
     if (boundEnvId) {
       targetQuery.set('env', boundEnvId);
+    } else {
+      targetQuery.delete('env');
     }
   }
   const queryText = targetQuery.toString();

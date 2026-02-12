@@ -3,7 +3,7 @@ import { MAX_PLAYERS, TUNING } from './config/gameConfig';
 import { updateGameplay } from './gameplay/gameplaySystem';
 import { createAudioSystem, drainSfxQueue } from './core/audioSystem';
 import { createInitialState, resetAllState, resetPlayingState } from './core/state';
-import { mountUI, renderDebugInfo, renderHud, renderThemeText, setDebugPanelVisible, setPausedOverlay, setScene } from './ui/hudOverlay';
+import { mountUI, renderDebugInfo, renderHud, renderThemeText, setDebugPanelVisible, setScene } from './ui/hudOverlay';
 import { renderGame } from './ui/render';
 
 const app = document.getElementById('app');
@@ -27,8 +27,6 @@ let fpsFrames = 0;
 let fpsLastTs = performance.now();
 let lastScene = state.scene;
 let pendingCandidates: { x: number; y: number; frames: number; age: number }[] = [];
-const isTouchDevice = navigator.maxTouchPoints > 0 || /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
-let pauseLockFrames = 0;
 
 function resizeCanvas(): void {
   if (video.videoWidth > 0 && video.videoHeight > 0) {
@@ -228,15 +226,13 @@ function loop(): void {
   }
 
   syncPlayersFromDetection();
-  if (pauseLockFrames > 0 && state.isPaused) {
+  if (state.isPaused) {
     state.isPaused = false;
-    setPausedOverlay(false);
   }
   updateGameplay(state, canvas.width, canvas.height);
   drainSfxQueue(audio, state.sfxQueue);
   renderGame(ctx, video, state);
   renderHud(state);
-  setPausedOverlay(state.scene === 'playing' && state.isPaused);
   renderDebugInfo({
     fps: fpsValue,
     activePlayers: state.players.filter((p) => p.active).length,
@@ -249,7 +245,6 @@ function loop(): void {
   }
   lastScene = state.scene;
   if (state.scene === 'gameover') setScene('gameover');
-  if (pauseLockFrames > 0) pauseLockFrames -= 1;
 
   requestAnimationFrame(loop);
 }
@@ -279,8 +274,6 @@ async function boot(): Promise<void> {
   const resetAllButton = document.getElementById('btn-reset-all') as HTMLButtonElement | null;
   const resetAllOverButton = document.getElementById('btn-reset-all-over') as HTMLButtonElement | null;
   const backHomeButton = document.getElementById('btn-back-home') as HTMLButtonElement | null;
-  const resumeButton = document.getElementById('btn-resume') as HTMLButtonElement | null;
-  const pausedOverlay = document.getElementById('overlay-paused') as HTMLElement | null;
 
   const start = (): void => {
     const isRestart = state.scene === 'gameover';
@@ -291,8 +284,6 @@ async function boot(): Promise<void> {
     state.scene = 'playing';
     state.isPaused = false;
     setScene('playing');
-    setPausedOverlay(false);
-    pauseLockFrames = 120;
   };
 
   startButton.addEventListener('click', start);
@@ -304,24 +295,9 @@ async function boot(): Promise<void> {
     resetAllState(state);
     lastScene = state.scene;
     setScene('intro');
-    setPausedOverlay(false);
-    pauseLockFrames = 120;
   };
   resetAllButton?.addEventListener('click', resetAll);
   resetAllOverButton?.addEventListener('click', resetAll);
-  const resumeFromPause = (): void => {
-    if (!state.isPaused || state.scene !== 'playing') return;
-    state.isPaused = false;
-    audio.unlock();
-    audio.play('ui_pause_off');
-    setPausedOverlay(false);
-    pauseLockFrames = 120;
-  };
-  resumeButton?.addEventListener('click', resumeFromPause);
-  pausedOverlay?.addEventListener('click', (event: MouseEvent) => {
-    if (event.target !== pausedOverlay) return;
-    resumeFromPause();
-  });
   backHomeButton?.addEventListener('click', () => {
     for (const track of mediaStream?.getTracks() ?? []) {
       track.stop();
@@ -333,15 +309,6 @@ async function boot(): Promise<void> {
       showDebug = !showDebug;
       setDebugPanelVisible(showDebug);
       return;
-    }
-    if (!isTouchDevice && (event.code === 'Space' || event.key.toLowerCase() === 'p')) {
-      if (event.repeat || pauseLockFrames > 0) return;
-      if (state.scene !== 'playing') return;
-      if (event.code === 'Space') event.preventDefault();
-      state.isPaused = !state.isPaused;
-      audio.unlock();
-      audio.play(state.isPaused ? 'ui_pause_on' : 'ui_pause_off');
-      setPausedOverlay(state.isPaused);
     }
     if (event.key.toLowerCase() === 'r') {
       resetAll();
